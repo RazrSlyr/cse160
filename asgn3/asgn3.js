@@ -295,6 +295,8 @@ let rotateY = 0;
 let rotateX = 0;
 let sableye = null;
 
+let terrain = null;
+
 
 function main() {
   // Set up website and main canvas
@@ -303,6 +305,9 @@ function main() {
   initTextures();
   g_rotateMatrix = new Matrix4();
   g_translateMatrix = new Matrix4();
+
+  terrain = new Terrain("heightMap", [1, 0, 0, 1], -7, 3, [-50, 50, -50, 50]);
+
 
   // Make Sableye
   let M = new Matrix4();
@@ -396,13 +401,8 @@ function renderScene() {
     buildCubes();
   }
   g_shapesList = cubes.slice();
+  g_shapesList.push(terrain);
   g_shapesList.push(sableye);
-
-  // Ground
-  M = new Matrix4();
-  M.translate(0, -0.55, 0);
-  M.scale(100, 0.1, 100);
-  g_shapesList.push(new Cube([1, 0, 0, 1], M, 2));
 
   // Skybox 
   M = new Matrix4();
