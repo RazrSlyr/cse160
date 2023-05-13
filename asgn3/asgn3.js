@@ -2,7 +2,7 @@
 // https://github.com/mrdoob/stats.js/
 // used for FPS reader
 let stats;
-function setupStats(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='https://mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);}
+function setupStats() { var script = document.createElement('script'); script.onload = function () { var stats = new Stats(); document.body.appendChild(stats.dom); requestAnimationFrame(function loop() { stats.update(); requestAnimationFrame(loop) }); }; script.src = 'https://mrdoob.github.io/stats.js/build/stats.min.js'; document.head.appendChild(script); }
 setupStats();
 
 // Vertex shader program
@@ -29,6 +29,7 @@ var FSHADER_SOURCE = `
   uniform sampler2D u_Sampler1;
   uniform sampler2D u_Sampler2;
   uniform sampler2D u_Sampler3;
+  uniform sampler2D u_Sampler4;
   uniform int u_WhichTexture;
   void main() {
     // gl_FragColor = u_FragColor;
@@ -42,6 +43,8 @@ var FSHADER_SOURCE = `
       gl_FragColor = texture2D(u_Sampler2, v_UV);
     } else if (u_WhichTexture == 3) {
       gl_FragColor = texture2D(u_Sampler3, v_UV);
+    } else if (u_WhichTexture == 4) {
+      gl_FragColor = vec4(texture2D(u_Sampler4, v_UV).rgb, 0.5);
     } else {
       gl_FragColor = vec4(1, 0, 1, 1);
     }
@@ -63,7 +66,7 @@ let u_ViewMatrix;
 let u_ProjectionMatrix;
 
 let u_Samplers = [];
-let n_textures = 4;
+let n_textures = 5;
 let u_WhichTexture;
 
 let g_rotateMatrix;
@@ -73,7 +76,7 @@ let g_yAngle = 0;
 let g_xAngle = 0;
 let gl_TEXTURES;
 
-const TEXTURES = ["./img/uvCoords.png", "./img/dirt.png", "./img/ground.png", "./img/star.png"]
+const TEXTURES = ["./img/uvCoords.png", "./img/beacon.png", "./img/ground.png", "./img/star.png", "./img/crystal.png"]
 
 let cubes = null;
 let world_width = 100;
@@ -82,7 +85,8 @@ const BLOCK = 0;
 const CRYSTAL = 1;
 let map = [];
 
-
+// Game related stats
+let n_sableye = 5;
 
 
 
@@ -110,7 +114,7 @@ function setUpWebGL() {
   }
 
   gl.enable(gl.DEPTH_TEST);
-  gl_TEXTURES = [gl.TEXTURE0, gl.TEXTURE1, gl.TEXTURE2, gl.TEXTURE3]
+  gl_TEXTURES = [gl.TEXTURE0, gl.TEXTURE1, gl.TEXTURE2, gl.TEXTURE3, gl.TEXTURE4]
 
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -254,7 +258,7 @@ function randomColor() {
   return [Math.random(), Math.random(), Math.random(), 1]
 }
 
-let speed = 0.025;
+let speed = 0.1;
 let rotate_speed = 0.125 / 16;
 
 
@@ -313,19 +317,30 @@ let terrain = null;
 // Gets map position I am looking at
 function getNearestMapPos() {
   let lookingAt = camera.getForward().mul(2).add(camera.eye);
-  let x = Math.round(lookingAt.elements[0] + 4 - 0.5);
-  let z = Math.round(lookingAt.elements[2] + 4 - 0.5);
+  let x = Math.round(lookingAt.elements[0] + world_width / 2 - 0.5);
+  let z = Math.round(lookingAt.elements[2] + world_depth / 2 - 0.5);
   console.log(`${z} ${x}`)
   return [z, x];
 }
 
 function removeBlock() {
   let [z, x] = getNearestMapPos();
+  if (z < 0 || x < 0 || z >= world_depth || x >= world_width) return;
   if (map[z][x] === 0) return;
   if (map[z][x][0] === BLOCK) {
     map[z][x][1] = map[z][x][1] - 1;
     if (map[z][x][1] === 0) {
       map[z][x] = 0;
+    }
+  } else if (map[z][x][0] === CRYSTAL) {
+    // Freed a sableye
+    n_sableye -= 1;
+    map[z][x] = 0;
+    // Update HTML
+    if (n_sableye !== 0) {
+      document.getElementById("n_sableye").innerHTML = `Number of Sableye Left: ${n_sableye}`;
+    } else {
+      document.getElementById("n_sableye").innerHTML = `Congrats! You've freed them all!`;  
     }
   }
   buildCubes();
@@ -333,6 +348,7 @@ function removeBlock() {
 
 function addBlock() {
   let [z, x] = getNearestMapPos();
+  if (z < 0 || x < 0 || z >= world_depth || x >= world_width) return;
   if (map[z][x] === 0) {
     map[z][x] = [BLOCK, 1];
   } else if (map[z][x][0] === BLOCK) {
@@ -362,7 +378,11 @@ function main() {
     map.push(row);
   }
 
-  map[19][8] = [BLOCK, 2];
+  map[66][54] = [CRYSTAL, 1];
+  map[87][49] = [CRYSTAL, 1];
+  map[44][38] = [CRYSTAL, 1];
+  map[87][15] = [CRYSTAL, 1];
+  map[63][70] = [CRYSTAL, 1];
 
   document.onkeydown = keydown;
   document.onkeyup = keyup;
@@ -372,7 +392,7 @@ function main() {
       await canvas.requestPointerLock({
         unadjustedMovement: true,
       });
-    } else if (event.button === 0){ // left click
+    } else if (event.button === 0) { // left click
       console.log(event);
       removeBlock();
     } else if (event.button === 2) { // right click
@@ -426,14 +446,30 @@ function buildCubes() {
   for (let i = 0; i < world_width; i++) {
     for (let j = 0; j < world_depth; j++) {
       if (map[i][j] === 0) continue;
-      let z = i - 4 + 0.5;
-      let x = j - 4 + 0.5;
+      let z = i - world_depth / 2 + 0.5;
+      let x = j - world_width / 2 + 0.5;
       for (let k = 0; k < map[i][j][1]; k++) {
         if (map[i][j][0] === BLOCK) {
           let y = k;
           let M = new Matrix4();
           M.translate(x, y, z);
           let cube = new Cube([1, 0, 0, 1], M, 1);
+          cubes.push(cube);
+        } else if (map[i][j][0] === CRYSTAL) {
+          let y = k;
+          // Make Sableye trapped in crystal
+          console.log("PUT SABLEYE");
+          let M = new Matrix4();
+          M.translate(x, y + 0.5, z);
+          M.scale(0.75, 0.75, 0.75);
+          let s = new Sableye(M);
+          cubes.push(s);
+
+          console.log("PUT CRYSTAL");
+          M = new Matrix4();
+          M.translate(x, y + 0.5, z);
+          M.scale(1.5, 2, 1.5);
+          let cube = new Cube([1, 0, 0, 1], M, 4);
           cubes.push(cube);
         }
       }
@@ -464,7 +500,7 @@ function renderScene() {
   // Skybox 
   M = new Matrix4();
   M.translate(0, 0, 0);
-  M.scale(100, 100, 100);
+  M.scale(200, 200, 200);
   g_shapesList.push(new Cube([1, 0, 0, 1], M, 3));
 
 
@@ -477,7 +513,7 @@ function renderScene() {
   // Second Arg: Aspect Ratio
   // Third Arg: Near Plane Clipping
   // Fourth Arg: Far Plane Clipping
-  projMat.setPerspective(60, canvas.width / canvas.height, 0.1, 100);
+  projMat.setPerspective(60, canvas.width / canvas.height, 0.1, 250);
   gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
   let viewMat = new Matrix4();
   // First Three Numbers: Where we are 
