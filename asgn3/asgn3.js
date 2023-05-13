@@ -92,7 +92,7 @@ const BLOCK = 0;
 const CRYSTAL = 1;
 let map = [];
 
-let blocky_color = false;
+let blocky_color = true;
 let loading = null;
 
 // Game related stats
