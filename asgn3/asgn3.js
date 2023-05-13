@@ -9,7 +9,9 @@ setupStats();
 var VSHADER_SOURCE = `
   attribute vec4 a_Position;
   attribute vec2 a_UV;
+  attribute vec4 a_Color;
   varying vec2 v_UV;
+  varying vec4 v_Color;
   uniform mat4 u_ModelMatrix;
   uniform mat4 u_GlobalRotateMatrix;
   uniform mat4 u_ViewMatrix;
@@ -17,12 +19,14 @@ var VSHADER_SOURCE = `
   void main() {
     gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
     v_UV = a_UV;
+    v_Color = a_Color;
   }`;
 
 // Fragment shader program
 var FSHADER_SOURCE = `
   precision mediump float;
   varying vec2 v_UV;
+  varying vec4 v_Color;
   uniform vec4 u_FragColor;
   // Sampler for texture
   uniform sampler2D u_Sampler0;
@@ -33,7 +37,9 @@ var FSHADER_SOURCE = `
   uniform int u_WhichTexture;
   void main() {
     // gl_FragColor = u_FragColor;
-    if (u_WhichTexture == -1) {
+    if (u_WhichTexture == -2) { // use varying color (currently only for heightmap)
+      gl_FragColor = v_Color;
+    } else if (u_WhichTexture == -1) {
       gl_FragColor = u_FragColor;
     } else if (u_WhichTexture == 0) {
       gl_FragColor = texture2D(u_Sampler0, v_UV);
@@ -58,6 +64,7 @@ let gl;
 let canvas;
 let a_Position;
 let a_UV;
+let a_Color;
 let u_FragColor;
 
 let u_ModelMatrix;
@@ -84,6 +91,9 @@ let world_depth = 100;
 const BLOCK = 0;
 const CRYSTAL = 1;
 let map = [];
+
+let blocky_color = false;
+let loading = null;
 
 // Game related stats
 let n_sableye = 5;
@@ -120,6 +130,19 @@ function setUpWebGL() {
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 }
 
+function setUpHTMLActions() {
+  loading = document.getElementById("loading");
+  document.getElementById("switch").onclick = function() {
+    if (!blocky_color) {
+      this.innerHTML = "Switch to smoothly colored hills";
+    } else {
+      this.innerHTML = "Switch to less-smoothly colored hills";
+    }
+    blocky_color = !blocky_color;
+    terrain = new Terrain("heightMap", [153 / 255, 0 / 255, 51 / 255, 1], -3, 7, [-50, 50, -50, 50], blocky_color);
+  }
+}
+
 function connectVariablesToGLSL() {
   // Initialize shaders
   if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
@@ -137,6 +160,12 @@ function connectVariablesToGLSL() {
   a_UV = gl.getAttribLocation(gl.program, "a_UV");
   if (a_UV < 0) {
     console.log('Failed to get the storage location of a_UV');
+    return;
+  }
+
+  a_Color = gl.getAttribLocation(gl.program, "a_Color");
+  if (a_Color < 0) {
+    console.log('Failed to get the storage location of a_Color');
     return;
   }
 
@@ -360,6 +389,7 @@ function addBlock() {
 
 function main() {
   // Set up website and main canvas
+  setUpHTMLActions();
   setUpWebGL();
   connectVariablesToGLSL();
   initTextures();
@@ -367,7 +397,7 @@ function main() {
   g_translateMatrix = new Matrix4();
 
   // Initialize terrain
-  terrain = new Terrain("heightMap", [1, 0, 0, 1], -3, 7, [-50, 50, -50, 50]);
+  terrain = new Terrain("heightMap", [153 / 255, 0 / 255, 51 / 255, 1], -3, 7, [-50, 50, -50, 50], blocky_color);
 
   // Initialize cube map
   for (let i = 0; i < world_width; i++) {
@@ -458,14 +488,13 @@ function buildCubes() {
         } else if (map[i][j][0] === CRYSTAL) {
           let y = k;
           // Make Sableye trapped in crystal
-          console.log("PUT SABLEYE");
           let M = new Matrix4();
           M.translate(x, y + 0.5, z);
           M.scale(0.75, 0.75, 0.75);
           let s = new Sableye(M);
           cubes.push(s);
 
-          console.log("PUT CRYSTAL");
+          // Make crystal
           M = new Matrix4();
           M.translate(x, y + 0.5, z);
           M.scale(1.5, 2, 1.5);

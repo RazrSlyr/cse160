@@ -1,17 +1,25 @@
 class Terrain {
-    constructor(mapId, base_color, minHeight, maxHeight, bounds) {
+    constructor(mapId, base_color, minHeight, maxHeight, bounds, blocky_color) {
+        loading.innerHTML = "Currently loading terrain map (this might take a while!)";
+        this.blocky_color = blocky_color;
+        if (blocky_color === undefined) this.blocky_color = false;
         this.maxHeight = maxHeight;
         this.minHeight = minHeight;
         this.bounds = bounds;
         this.base_color = base_color;
         let image = document.getElementById(mapId);
         this.triangles = null;
-        this.buffer = gl.createBuffer();
+        this.vertexBuffer = gl.createBuffer();
+        this.colorBuffer = gl.createBuffer();
         this.imgWidth = image.width;
         this.imgHeight = image.height;
+        // Larger gap = better performance, blockier look
         this.gap = 8;
         this.done = false;
+        this.vertices = null;
+        this.colors = null;
         this.loadImageData(image).then(() => {
+            loading.innerHTML = " ";
             this.done = true;
         })
     }
@@ -26,7 +34,7 @@ class Terrain {
         // Extract image data
         let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         // Delete image
-        image.remove();
+        // image.remove();
         // Get point data
         this.loadPoints(imageData.data);
     }
@@ -76,6 +84,7 @@ class Terrain {
 
     loadTriangles(points) {
         this.triangles = [];
+        this.colors = [];
         let gapX = (this.bounds[1] - this.bounds[0]) / points[0].length;
         let gapZ = (this.bounds[3] - this.bounds[2]) / points.length;
         for (let row = 0; row < points.length - 1; row++) {
@@ -105,25 +114,94 @@ class Terrain {
                     tlx, tly, tlz,
                     blx, bly, blz,
                     trx, _try, trz
-                ], color, this.buffer);
+                ], color, this.vertexBuffer);
                 // Second, bl, tr, br
                 let triangle2 = new Triangle([
                     blx, bly, blz,
                     trx, _try, trz,
                     brx, bry, brz
-                ], color, this.buffer);
+                ], color, this.vertexBuffer);
                 // Add triangles to array
                 this.triangles.push(triangle1);
                 this.triangles.push(triangle2);
+
+                // Part of new method: Add Color to new array
+                for (let i = 0; i < 3; i++) {
+                    let y = triangle1.coords[1 + i * 3];
+                    // Remove the line below for blockier color (if you like that look)
+                    if (!this.blocky_color) color = this.getColorFromHeight(y);
+                    this.colors = this.colors.concat(color);
+                }
+
+                let colors2 = [];
+                for (let i = 0; i < 3; i++) {
+                    let y = triangle2.coords[1 + i * 3];
+                    // Remove the line below for blockier color (if you like that look)
+                    if (!this.blocky_color) color = this.getColorFromHeight(y);
+                    this.colors = this.colors.concat(color);
+                }
             }
         }
+
+        // Compile triangles into one big list of vertices
+        let temp = [];
+        for (let i = 0; i < this.triangles.length; i++) {
+            for (let j = 0; j < 9; j++) {
+                temp.push(this.triangles[i].coords[j]);
+            }
+        }
+        this.vertices = new Float32Array(temp);
+        this.colors = new Float32Array(this.colors);
+        console.log(this.colors.length / 4 - this.vertices.length / 3);
     }
 
     render() {
         if (this.done === false) return;
-        for (let i = 0; i < this.triangles.length; i++) {
-            this.triangles[i].render();
-        }
+        // Old way: render each triangle
+        // for (let i = 0; i < this.triangles.length; i++) {
+        //     this.triangles[i].render();
+        // }
+
+        // New Way: One huge render with a bunch of triangles at once
+
+        // Pass the model matrix
+        let idy = new Matrix4();
+        gl.uniformMatrix4fv(u_ModelMatrix, false, idy.elements);
+
+        // Tell it to use varying color
+        gl.uniform1i(u_WhichTexture, -2);
+
+        // Load position data
+
+        // Bind the buffer object to target
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+        // Write data into the buffer object
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.DYNAMIC_DRAW);
+
+        // Assign the buffer object to a_Position variable
+        gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
+
+        // Enable the assignment to a_Position variable
+        gl.enableVertexAttribArray(a_Position);
+
+        // Load color data
+
+        // Enable the assignment to a_Color variable
+        gl.enableVertexAttribArray(a_Color);
+        
+        // Bind the buffer object to target
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
+        // Write data into the buffer object
+        gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.DYNAMIC_DRAW);
+
+        // Assign the buffer object to a_Color variable
+        gl.vertexAttribPointer(a_Color, 4, gl.FLOAT, false, 0, 0);
+
+        
+
+        // Draw the triangle
+        gl.drawArrays(gl.TRIANGLES, 0, this.vertices.length / 3);
+        gl.disableVertexAttribArray(a_Position);
     }
 
 

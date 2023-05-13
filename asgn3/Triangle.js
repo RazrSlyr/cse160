@@ -1,12 +1,16 @@
 class Triangle {
     constructor(coords, color, buffer) {
-        this.coords = new Float32Array(coords);
+        this.coords = coords;
+        this.coordsArr = null;
         this.vertexBuffer = buffer;
         if (buffer === undefined) this.vertexBuffer = gl.createBuffer();
         this.color = color;
     }
 
     render() {
+        if (this.coordsArr === null) {
+            this.coordsArr = new Float32Array(this.coords);
+        }
         // Pass the model matrix
         let idy = new Matrix4();
         gl.uniformMatrix4fv(u_ModelMatrix, false, idy.elements);
@@ -20,7 +24,7 @@ class Triangle {
         // Bind the buffer object to target
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
         // Write data into the buffer object
-        gl.bufferData(gl.ARRAY_BUFFER, this.coords, gl.DYNAMIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, this.coordsArr, gl.DYNAMIC_DRAW);
 
         // Assign the buffer object to a_Position variable
         gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
