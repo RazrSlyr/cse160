@@ -1,7 +1,8 @@
 // Taken from
 // https://github.com/mrdoob/stats.js/
 // used for FPS reader
-function setupStats() { var script = document.createElement('script'); script.onload = function () { var stats = new Stats(); document.body.appendChild(stats.dom); requestAnimationFrame(function loop() { stats.update(); requestAnimationFrame(loop) }); }; script.src = 'https://mrdoob.github.io/stats.js/build/stats.min.js'; document.head.appendChild(script); }
+let stats;
+function setupStats(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='https://mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);}
 setupStats();
 
 // Vertex shader program
@@ -73,6 +74,13 @@ let g_xAngle = 0;
 let gl_TEXTURES;
 
 const TEXTURES = ["./img/uvCoords.png", "./img/dirt.png", "./img/ground.png", "./img/star.png"]
+
+let cubes = null;
+let world_width = 100;
+let world_depth = 100;
+const BLOCK = 0;
+const CRYSTAL = 1;
+let map = [];
 
 
 
@@ -273,6 +281,8 @@ function keydown(event) {
     camera.move[0] = 1;
   } else if (event.keyCode === 65) { // a pressed
     camera.move[0] = -1;
+  } else if (event.keyCode === 8) { // backspace pressed
+    getNearestMapPos();
   }
 }
 
@@ -300,6 +310,37 @@ let sableye = null;
 
 let terrain = null;
 
+// Gets map position I am looking at
+function getNearestMapPos() {
+  let lookingAt = camera.getForward().mul(2).add(camera.eye);
+  let x = Math.round(lookingAt.elements[0] + 4 - 0.5);
+  let z = Math.round(lookingAt.elements[2] + 4 - 0.5);
+  console.log(`${z} ${x}`)
+  return [z, x];
+}
+
+function removeBlock() {
+  let [z, x] = getNearestMapPos();
+  if (map[z][x] === 0) return;
+  if (map[z][x][0] === BLOCK) {
+    map[z][x][1] = map[z][x][1] - 1;
+    if (map[z][x][1] === 0) {
+      map[z][x] = 0;
+    }
+  }
+  buildCubes();
+}
+
+function addBlock() {
+  let [z, x] = getNearestMapPos();
+  if (map[z][x] === 0) {
+    map[z][x] = [BLOCK, 1];
+  } else if (map[z][x][0] === BLOCK) {
+    map[z][x][1] = map[z][x][1] + 1;
+  }
+  buildCubes();
+}
+
 
 function main() {
   // Set up website and main canvas
@@ -309,22 +350,34 @@ function main() {
   g_rotateMatrix = new Matrix4();
   g_translateMatrix = new Matrix4();
 
-  terrain = new Terrain("heightMap", [1, 0, 0, 1], -4, 6, [-50, 50, -50, 50]);
+  // Initialize terrain
+  terrain = new Terrain("heightMap", [1, 0, 0, 1], -3, 7, [-50, 50, -50, 50]);
 
+  // Initialize cube map
+  for (let i = 0; i < world_width; i++) {
+    let row = [];
+    for (let j = 0; j < world_depth; j++) {
+      row.push(0);
+    }
+    map.push(row);
+  }
 
-  // Make Sableye
-  let M = new Matrix4();
-  M.translate(0.5, 0, -1);
-  M.scale(0.5, 0.5, 0.5);
-  sableye = new Sableye(M);
+  map[19][8] = [BLOCK, 2];
 
   document.onkeydown = keydown;
   document.onkeyup = keyup;
 
-  canvas.addEventListener("click", async () => {
-    await canvas.requestPointerLock({
-      unadjustedMovement: true,
-    });
+  canvas.addEventListener("click", async (event) => {
+    if (!locked) {
+      await canvas.requestPointerLock({
+        unadjustedMovement: true,
+      });
+    } else if (event.button === 0){ // left click
+      console.log(event);
+      removeBlock();
+    } else if (event.button === 2) { // right click
+      addBlock();
+    }
   });
 
   document.addEventListener("pointerlockchange", (event) => {
@@ -346,32 +399,27 @@ function main() {
 
 }
 
-function tick() {
+let my_fps = null;
+let last_time = null;
+function tick(timestamp) {
+
+  // calc fps
+  if (last_time === null) {
+    last_time = timestamp;
+  } else {
+    let frame_time = +timestamp - +last_time;
+    my_fps = 1 / (frame_time / 1000);
+    last_time = timestamp;
+  }
+
   camera.rotate[1] = rotateY;
   camera.rotate[0] = rotateX;
-  camera.update();
+  camera.update(my_fps);
   rotateY = 0;
   rotateX = 0;
   renderScene();
   requestAnimationFrame(tick);
 }
-
-
-let cubes = null;
-let world_width = 8;
-let world_depth = 8;
-const BLOCK = 0;
-const CRYSTAL = 0;
-let map = [
-  [[BLOCK, 2], [BLOCK, 2], [BLOCK, 2], [BLOCK, 2], [BLOCK, 2], [BLOCK, 2], [BLOCK, 2], [BLOCK, 2]],
-  [[BLOCK, 2], 0, [BLOCK, 1], 0, 0, 0, 0, [BLOCK, 2]],
-  [[BLOCK, 2], 0, 0, [BLOCK, 1], 0, [BLOCK, 1], 0, [BLOCK, 2]],
-  [[BLOCK, 2], 0, [BLOCK, 1], 0, 0, [BLOCK, 1], 0, [BLOCK, 2]],
-  [[BLOCK, 2], 0, 0, 0, 0, 0, 0, [BLOCK, 2]],
-  [[BLOCK, 2], 0, [BLOCK, 1], 0, [BLOCK, 1], 0, 0, [BLOCK, 2]],
-  [[BLOCK, 2], 0, 0, [BLOCK, 1], 0, 0, 0, [BLOCK, 2]],
-  [[BLOCK, 2], [BLOCK, 2], [BLOCK, 2], [BLOCK, 2], [BLOCK, 2], [BLOCK, 2], [BLOCK, 2], [BLOCK, 2]],
-];
 
 function buildCubes() {
   cubes = [];
@@ -398,6 +446,7 @@ function buildCubes() {
 
 
 
+
 function renderScene() {
   clearCanvas();
   if (cubes === null) {
@@ -405,7 +454,6 @@ function renderScene() {
   }
   g_shapesList = cubes.slice();
   g_shapesList.push(terrain);
-  g_shapesList.push(sableye);
 
   // Ground
   M = new Matrix4();

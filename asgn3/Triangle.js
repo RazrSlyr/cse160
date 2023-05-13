@@ -1,7 +1,8 @@
 class Triangle {
-    constructor(coords, color) {
+    constructor(coords, color, buffer) {
         this.coords = new Float32Array(coords);
-        this.vertexBuffer = gl.createBuffer();
+        this.vertexBuffer = buffer;
+        if (buffer === undefined) this.vertexBuffer = gl.createBuffer();
         this.color = color;
     }
 

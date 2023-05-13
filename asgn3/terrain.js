@@ -105,13 +105,13 @@ class Terrain {
                     tlx, tly, tlz,
                     blx, bly, blz,
                     trx, _try, trz
-                ], color);
+                ], color, this.buffer);
                 // Second, bl, tr, br
                 let triangle2 = new Triangle([
                     blx, bly, blz,
                     trx, _try, trz,
                     brx, bry, brz
-                ], color);
+                ], color, this.buffer);
                 // Add triangles to array
                 this.triangles.push(triangle1);
                 this.triangles.push(triangle2);
