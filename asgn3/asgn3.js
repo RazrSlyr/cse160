@@ -133,12 +133,14 @@ function setUpWebGL() {
 function setUpHTMLActions() {
   loading = document.getElementById("loading");
   document.getElementById("switch").onclick = function() {
+    if (terrain.done === false) return;
     if (!blocky_color) {
       this.innerHTML = "Switch to smoothly colored hills";
     } else {
       this.innerHTML = "Switch to less-smoothly colored hills";
     }
     blocky_color = !blocky_color;
+    alert("This reloads the terrain, which might take a while");
     terrain = new Terrain("heightMap", [153 / 255, 0 / 255, 51 / 255, 1], -3, 7, [-50, 50, -50, 50], blocky_color);
   }
 }
