@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Assignment 1: Painting</title>
+  <!-- CSS Library -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body onload="main()">
+  <div class="grid grid-cols-1 place-items-center h-full w-full">
+    <span class="font-bold text-5xl m-6">Assignment 1: Painting</span>
+    <span class="text-4xl mb-6">Paint Program</span>
+
+
+    <canvas id="webgl" width="400px" height="400px">
+      Please use a browser that supports "canvas"
+    </canvas>
+    <button id="clear">Clear Canvas</button>
+    <p class="text-2xl m-5">Select Your Shape</p>
+    <div>
+      <button id="square">Square</button>
+      <button id="triangle">Triangle</button>
+      <button id="circle">Circle</button>
+      <button id="star">Star</button>
+      <button id="squirtle"></button>
+    </div>
+    <p class="text-2xl m-5">Select Your Color</p>
+    <div>
+      <div>
+        Red
+        <input type="range" min="0" max="255" value="255" id="red">
+        <input type="number" value="255" id="red_text">
+      </div>
+      <div class="mt-2">
+        Green <input type="range" min="0" max="255" value="255" id="green">
+        <input type="number" value="255" id="green_text">
+      </div>
+      <div class="mt-2">
+        Blue <input type="range" min="0" max="255" value="255" id="blue">
+        <input type="number" value="255" id="blue_text">
+      </div>
+    </div>
+    <div class="mt-2 flex place-items-center gap-2">
+      <span>The Selected Color</span>
+      <div class="inline-block h-8 w-8 border border-black rounded-full" id="color_box"></div>
+    </div>
+    <p class="text-2xl m-5">Customize Shape</p>
+    <div class="mt-2">
+      Shape Size <input type="range" min="1" max="50" value="10" id="size">
+      <input type="number" value="10" id="size_text">
+    </div>
+    <div class="mt-2">
+      (Circles) Segment Count <input type="range" min="5" max="30" value="10" id="segments">
+      <input type="number" value="10" id="segments_text">
+    </div>
+    <span class="text-4xl my-6">Beyond the Basics: Paper Drawing</span>
+    <p class="mb-6">For my paper drawing, I tried to draw Squirtle from Pokemon. This was the base drawing</p>
+    <img src="./squirtle.jpg" width="400px">
+    <p class="mt-6">From there I plotted the points in GeoGebra to make it easier to figure out how to turn it into
+      quads and triangles
+    </p>
+    <img src="./squirtle_geo.png" width="400px">
+    <p class="mt-6">Below is the version made in WebGl
+    </p>
+    <canvas id="webgl2" width="400px" height="400px">
+      Please use a browser that supports "canvas"
+    </canvas>
+    <p class="my-5">Go ahead, capture it!</p>
+    <button id="capture">
+      Capture
+    </button>
+    <p class="my-5 w-1/2 text-center" id="capture_text"></p>
+    <p class="text-4xl mb-6">Beyond the Basics: "Something Awesome"</p>
+    <p class="mb-5 w-1/2 text-center">For the "something awesome", I made various miscellaneous changes
+      as well as added the two new shapes (being star and Squirtle). The miscellaneous changes
+      are mainly the changes to the UI. The better looking buttons and layout, the ability to use text input,
+      the ability to preview the color you've selected, stuff like that. Those aren't
+      necessarily related to graphics programming but I found they made for a cooler experience
+      using the paint program. The star was a good exercise in combining triangles and I felt it fit right in
+      with the other stamp shapes. The ability to draw Squirtles was definitely more of a challenge since it was
+      the only object I've drawn that needed to be drawable on two different canvases. I eventually got it to work,
+      although my solution might be just a <i>teensy</i> bit hack-y. The "capturing" thing was a simple addition
+      but I thought it added a bit of fun to it given that it's a Pokemon.
+    </p>
+  </div>
+
+  <script src="./lib/webgl-utils.js"></script>
+  <script src="./lib/webgl-debug.js"></script>
+  <script src="./lib/cuon-utils.js"></script>
+  <script src="./Point.js"></script>
+  <script src="./Triangle.js"></script>
+  <script src="./Circle.js"></script>
+  <script src="./Star.js"></script>
+  <script src="./Squirtle.js"></script>
+  <script src="./asgn1.js"></script>
+</body>
+
+</html>

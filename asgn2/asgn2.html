@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Assignment 1: Painting</title>
+  <!-- CSS Library -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body onload="main()">
+  <div class="grid grid-cols-1 place-items-center h-full w-full">
+    <p class="text-5xl my-5"> Assignment 2: Blocky Animal</p>
+    <p>Shift click on the canvas to say hello!</p>
+
+    <canvas id="webgl" width="400px" height="400px">
+      Please use a browser that supports "canvas"
+    </canvas>
+    <p class="text-md text-gray-500" id="fps">FPS: </p>
+    <p class="text-3xl my-5">Rotation Sliders</p>
+    <div class="grid grid-cols-4 place-items-center">
+      <div class="grid grid-cols-1 justify-items-center h-full w-full">
+        <p class="text-3xl">Left</p>
+        <div>
+          <p>Shoulder Angle (z-axis)</p>
+          <input type="range" min="-15" , max="15" value="0" class="slider" id="lShoulder">
+        </div>
+        <div>
+          <p>Elbow Angle (x-axis)</p>
+          <input type="range" min="-30" , max="30" value="0" class="slider" id="lElbow">
+        </div>
+        <div>
+          <p>Elbow Angle (z-axis)</p>
+          <input type="range" min="-60" , max="60" value="0" class="slider" id="lElbowZ">
+        </div>
+        <div>
+          <p>Finger Angles (z-axis)</p>
+          <input type="range" min="-60" , max="60" value="0" class="slider" id="lFinger0"><br>
+          <input type="range" min="-60" , max="60" value="0" class="slider" id="lFinger1"><br>
+          <input type="range" min="-60" , max="60" value="0" class="slider" id="lFinger2"><br>
+        </div>
+        <div>
+          <p>Hip Joint Angle (x-axis)</p>
+          <input type="range" min="-45" , max="45" value="0" class="slider" id="lHip"><br>
+        </div>
+        <div>
+          <p>Knee Joint Angle (x-axis)</p>
+          <input type="range" min="-90" , max="0" value="-45" class="slider" id="lKnee"><br>
+        </div>
+
+      </div>
+      <div class="h-full w-full text-center">
+
+        <p class="text-2xl">Camera Control</p>
+        <p class="text-md text-gray-500">You can also drag the mouse on the canvas to rotate</p>
+        <div>
+          Camera Angle (x-axis)
+          <br>
+          <input type="range" min="-180" , max="180" value="-30" class="slider" id="xAngle">
+        </div>
+        <div>
+          Camera Angle (y-axis)
+          <br>
+          <input type="range" min="-180" , max="180" value="-30" class="slider" id="yAngle">
+        </div>
+      </div>
+      <div class="h-full w-full text-center">
+
+        <p class="text-2xl">Other</p>
+        <div>
+          Head Rotation (x-axis)
+          <br>
+          <input type="range" min="-30" , max="30" value="0" class="slider" id="head">
+        </div>
+      </div>
+      <div class="grid grid-cols-1 justify-items-center h-full w-full">
+        <p class="text-3xl">Right</p>
+        <div>
+          <p>Shoulder Angle (z-axis)</p>
+          <input type="range" min="-15" , max="15" value="0" class="slider" id="rShoulder">
+        </div>
+        <div>
+          <p>Elbow Angle (x-axis)</p>
+          <input type="range" min="-30" , max="30" value="0" class="slider" id="rElbow">
+        </div>
+        <div>
+          <p>Elbow Angle (z-axis)</p>
+          <input type="range" min="-60" , max="60" value="0" class="slider" id="rElbowZ">
+        </div>
+        <div>
+          <p>Finger Angles (z-axis)</p>
+          <input type="range" min="-60" , max="60" value="0" class="slider" id="rFinger0"><br>
+          <input type="range" min="-60" , max="60" value="0" class="slider" id="rFinger1"><br>
+          <input type="range" min="-60" , max="60" value="0" class="slider" id="rFinger2"><br>
+        </div>
+        <div>
+          <p>Hip Joint Angle (x-axis)</p>
+          <input type="range" min="-45" , max="45" value="0" class="slider" id="rHip"><br>
+        </div>
+        <div>
+          <p>Knee Joint Angle (x-axis)</p>
+          <input type="range" min="-90" , max="0" value="-45" class="slider" id="rKnee"><br>
+        </div>
+
+      </div>
+    </div>
+    <div>
+
+    </div>
+    <div class="grid grid-cols-2 place-items-center gap-2">
+      <button class="rounded-xl bg-blue-400 p-3 text-white hover:drop-shadow-md" id="stop">Stop Animation</p>
+        <button class="rounded-xl bg-blue-400 p-3 text-white hover:drop-shadow-md" id="reset">Reset Animation</p>
+    </div>
+
+  </div>
+  <script src="./lib/webgl-utils.js"></script>
+  <script src="./lib/webgl-debug.js"></script>
+  <script src="./lib/cuon-utils.js"></script>
+  <script src="./lib/cuon-matrix.js"></script>
+  <script src="./Point.js"></script>
+  <script src="./Prism.js"></script>
+  <script src="./Cube.js"></script>
+  <script src="./asgn2.js"></script>
+</body>
+
+</html>
