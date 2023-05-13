@@ -9,7 +9,7 @@ class Terrain {
         this.buffer = gl.createBuffer();
         this.imgWidth = image.width;
         this.imgHeight = image.height;
-        this.gap = 10;
+        this.gap = 8;
         this.done = false;
         this.loadImageData(image).then(() => {
             this.done = true;
