@@ -14,7 +14,7 @@ class Terrain {
         this.imgWidth = image.width;
         this.imgHeight = image.height;
         // Larger gap = better performance, blockier look
-        this.gap = 4;
+        this.gap = 8;
         this.done = false;
         this.vertices = null;
         this.colors = null;

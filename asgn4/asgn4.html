@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Assignment 3: Lighting</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body onload="main()">
+  <div class="grid grid-cols-1 place-items-center h-full w-full">
+    <p class="text-3xl my-5"> Assignment 4: Lighting</p>
+
+    <p class="text-2xl mb-5 font-bold" id="loading">Currently loading terrain map (this might take a while!)</p>
+
+    <canvas id="webgl" width="800px" height="450px">
+      Please use a browser that supports "canvas"
+    </canvas>
+    <p class="text-center text-2xl font-bold my-3" id="n_sableye">
+      Number of Sableye Left: 5
+    </p>
+    <button class="rounded w-64 p-3 border border-blue-500 text-blue-500 mt-5 text-lg" id="switch">
+      Switch to smoothly colored hills
+    </button>
+
+    <p class="w-3/5 text-center">
+      Oh no! Some Sableye got trapped in some crystals while searching for more gems. 
+      Try and free them all! Make sure to <b>Left Click</b> onto the canvas so it can capture your mouse pointer
+      and let you <b>control the camera</b> with your mouse! Click <b>Escape</b> to uncapture the mouse.
+    </p>
+    <p class="text-2xl font-bold my-3">
+      Controls  
+    </p>
+    <p class="mt-2">
+      <b>Right Click</b> to spawn blocks in front of you (right click the same spot to start building a stack)
+    </p>
+    <p class="w-3/5 mt-2 text-center">
+      <b>Left Click</b> lets you break blocks you've made (top to bottom if the blocks are in a stack) <b>as well as</b> break the
+      crystals the Sableye are trapped in! <b>Note: </b>Admittedly this can feel a little jank. If you find yourself not breaking the block
+      you want to break, try moving a little back or a little forward! Same goes with adding blocks.
+    </p>
+
+    <img id="heightMap" src="maps/terrain.png" style="opacity: 0;">
+
+  <script src="./lib/webgl-utils.js"></script>
+  <script src="./lib/webgl-debug.js"></script>
+  <script src="./lib/cuon-utils.js"></script>
+  <script src="./lib/cuon-matrix.js"></script>
+  <script src="./Point.js"></script>
+  <script src="./Prism.js"></script>
+  <script src="./Cube.js"></script>
+  <script src="./Sableye.js"></script>
+  <script src="./Camera.js"></script>
+  <script src="./Triangle.js"></script>
+  <script src="./Terrain.js"></script>
+  <script src="./asgn4.js"></script>
+</body>
+
+</html>
