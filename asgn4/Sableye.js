@@ -406,13 +406,13 @@ class Sableye {
         if (M == undefined) M = new Matrix4(this.matrix);
         let M2 = new Matrix4(M);
         M2.translate(-0.2, (0.75 * 0.8) / 2, 0);
-        M2.scale(0.25, 0.25, bodyDepth);
+        M2.scale(0.25, 0.25, bodyDepth - 0.01);
         M2.rotate(-90, 1, 0, 0);
         this.shapesList.push(new Prism(points, 1, bodyPurple, M2));
 
         M2 = new Matrix4(M);
         M2.translate(-0.3, -0.03 + (0.75 * 0.8) / 2, 0);
-        M2.scale(0.25, 0.25, bodyDepth);
+        M2.scale(0.25, 0.25, bodyDepth - 0.01);
         M2.rotate(30, 0, 0, 1);
         M2.rotate(-90, 1, 0, 0);
         this.shapesList.push(new Prism(points, 1, bodyPurple, M2));
@@ -420,13 +420,13 @@ class Sableye {
         // Left Ear
         M2 = new Matrix4(M);
         M2.translate(0.2, (0.75 * 0.8) / 2, -0.005);
-        M2.scale(-0.25, 0.25, bodyDepth);
+        M2.scale(-0.25, 0.25, bodyDepth - 0.01);
         M2.rotate(-90, 1, 0, 0);
         this.shapesList.push(new Prism(points, 1, bodyPurple, M2));
 
         M2 = new Matrix4(M);
         M2.translate(0.3, -0.03 + (0.75 * 0.8) / 2, -0.005);
-        M2.scale(-0.25, 0.25, bodyDepth);
+        M2.scale(-0.25, 0.25, bodyDepth - 0.01);
         M2.rotate(30, 0, 0, 1);
         M2.rotate(-90, 1, 0, 0);
         this.shapesList.push(new Prism(points, 1, bodyPurple, M2));

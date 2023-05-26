@@ -79,9 +79,7 @@ class Prism {
         this.sfNormalsArrays = null;
     }
 
-    drawTopFace(rgba, inc) {
-        let [r, g, b, a] = rgba;
-        gl.uniform4f(u_FragColor, r, g, b, a);
+    drawTopFace() {
 
         // Create a buffer object
         if (this.vertexBuffer == undefined) {
@@ -152,16 +150,13 @@ class Prism {
         gl.disableVertexAttribArray(a_Normal);
 
         // Update rgba
-        for (let i = 0; i < 3; i++) {
-            rgba[i] -= inc[i];
-        }
-        return rgba;
+        // for (let i = 0; i < 3; i++) {
+        //     rgba[i] -= inc[i];
+        // }
+        // return rgba;
     }
 
-    drawBottomFace(rgba, inc) {
-        let [r, g, b, a] = rgba;
-        gl.uniform4f(u_FragColor, r, g, b, a);
-
+    drawBottomFace() {
         // Create a buffer object
         if (this.vertexBuffer == undefined) {
             this.vertexBuffer = gl.createBuffer();
@@ -213,14 +208,14 @@ class Prism {
         gl.disableVertexAttribArray(a_Normal);
 
         // Update rgba
-        for (let i = 0; i < 3; i++) {
-            rgba[i] -= inc[i];
-        }
-        return rgba;
+        // for (let i = 0; i < 3; i++) {
+        //     rgba[i] -= inc[i];
+        // }
+        // return rgba;
     }
 
-    drawSideFaces(rgba, inc) {
-        let [r, g, b, a] = rgba;
+    drawSideFaces() {
+        // let [r, g, b, a] = rgba;
 
         // Initialize Side Arrays (if not already done)
         if (this.sideArrays == null) {
@@ -259,7 +254,6 @@ class Prism {
         for (let i = 0; i < this.face.length; i++) {
             // Draw Triangles
             // Set color
-            gl.uniform4f(u_FragColor, r, g, b, a);
 
             // Add position data
 
@@ -293,27 +287,31 @@ class Prism {
             // // Enable the assignment to a_Normal variable
             gl.enableVertexAttribArray(a_Normal);
             // // Buffer data
-            gl.bufferData(gl.ARRAY_BUFFER, this.sfNormalsArrays, gl.DYNAMIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, this.sfNormalsArrays[i], gl.DYNAMIC_DRAW);
 
             // Draw the triangles
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
             // Alter Color
-            r -= inc[0];
-            g -= inc[1];
-            b -= inc[2];
+            // r -= inc[0];
+            // g -= inc[1];
+            // b -= inc[2];
         }
 
         gl.disableVertexAttribArray(a_UV);
         gl.disableVertexAttribArray(a_Normal);
 
-        rgba = [r, g, b, a];
-        return rgba;
+        // rgba = [r, g, b, a];
+        // return rgba;
 
     }
 
     render() {
         // Pass the model matrix
         gl.uniformMatrix4fv(u_ModelMatrix, false, this.matrix.elements);
+        let normalMatrix = new Matrix4();
+        normalMatrix.setInverseOf(this.matrix);
+        normalMatrix.transpose();
+        gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
         let rgba = this.color.slice();
 
         // Pass the color of a point to u_FragColor variable

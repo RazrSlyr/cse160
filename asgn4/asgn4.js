@@ -10,21 +10,28 @@ var VSHADER_SOURCE = `
   attribute vec4 a_Position;
   attribute vec2 a_UV;
   attribute vec4 a_Color;
-  attribute vec3 a_Normal;
+  attribute vec4 a_Normal;
 
   varying vec3 v_Normal;
   varying vec2 v_UV;
   varying vec4 v_Color;
+  varying vec4 v_VertPos;
 
   uniform mat4 u_ModelMatrix;
   uniform mat4 u_GlobalRotateMatrix;
   uniform mat4 u_ViewMatrix;
   uniform mat4 u_ProjectionMatrix;
+  uniform mat4 u_NormalMatrix;
+
+
+
   void main() {
     gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
     v_UV = a_UV;
     v_Color = a_Color;
-    v_Normal = a_Normal;
+    v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
+    
+    v_VertPos = u_ModelMatrix * a_Position;
   }`;
 
 // Fragment shader program
@@ -33,6 +40,8 @@ var FSHADER_SOURCE = `
   varying vec2 v_UV;
   varying vec4 v_Color;
   varying vec3 v_Normal;
+  varying vec4 v_VertPos;
+
   uniform vec4 u_FragColor;
   // Sampler for texture
   uniform sampler2D u_Sampler0;
@@ -41,7 +50,13 @@ var FSHADER_SOURCE = `
   uniform sampler2D u_Sampler3;
   uniform sampler2D u_Sampler4;
   uniform int u_WhichTexture;
+
+  // Lighting uniforms
+  uniform vec3 u_LightPos;
+  uniform vec3 u_CameraPos;
+
   void main() {
+
     // gl_FragColor = u_FragColor;
     if (u_WhichTexture == -2) { // use varying color (currently only for heightmap)
       gl_FragColor = v_Color;
@@ -55,11 +70,43 @@ var FSHADER_SOURCE = `
       gl_FragColor = texture2D(u_Sampler2, v_UV);
     } else if (u_WhichTexture == 3) {
       gl_FragColor = texture2D(u_Sampler3, v_UV);
+      // This one is the background, no lighting needed
+      return;
     } else if (u_WhichTexture == 4) {
       gl_FragColor = vec4(texture2D(u_Sampler4, v_UV).rgb, 0.5);
     } else {
       gl_FragColor = vec4(v_Normal, 1.0); // Here so compiler doesn't auto remove v_Normal, does nothing
     }
+
+    // Lighting
+    vec3 lightVector = u_LightPos - vec3(v_VertPos);
+    float r = length(lightVector);
+
+    // check if you're the light
+    if (r < 5.0) {
+      return;
+    }
+
+    // N dot L (for diffuse lighting)
+    float Id = 1.0;
+    vec3 L = normalize(lightVector);
+    vec3 N = normalize(v_Normal);
+    float nDotL = max(dot(N, L), 0.0);
+    vec3 diffuse = vec3(gl_FragColor) * nDotL * Id;
+
+    // Ambient
+    float Ia = 0.3;
+    vec3 ambient = vec3(gl_FragColor) * Ia;
+
+    // Specular
+    float Is = 1.0;
+    float specCoef = 1.0;
+    vec3 R = reflect(-L, N);
+    vec3 E = normalize(u_CameraPos - vec3(v_VertPos));
+    vec3 specular = vec3(gl_FragColor) * Is * pow(max(dot(E, R), 0.0), 10.0);
+
+    gl_FragColor = vec4(diffuse + ambient + specular, gl_FragColor.a);
+
   }`;
 
 const SHAPE_POINT = 0;
@@ -75,9 +122,12 @@ let u_FragColor;
 let a_Normal;
 
 let u_ModelMatrix;
+let u_NormalMatrix;
 let u_GlobalRotateMatrix;
 let u_ViewMatrix;
 let u_ProjectionMatrix;
+let u_LightPos;
+let u_CameraPos;
 
 let u_Samplers = [];
 let n_textures = 5;
@@ -135,21 +185,22 @@ function setUpWebGL() {
 
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  console.log(gl.getParameter(gl.VERSION));
 }
 
 function setUpHTMLActions() {
   loading = document.getElementById("loading");
-  document.getElementById("switch").onclick = function() {
-    if (terrain.done === false) return;
-    if (!blocky_color) {
-      this.innerHTML = "Switch to smoothly colored hills";
-    } else {
-      this.innerHTML = "Switch to less-smoothly colored hills";
-    }
-    blocky_color = !blocky_color;
-    alert("This reloads the terrain, which might take a while");
-    terrain = new Terrain("heightMap", [153 / 255, 0 / 255, 51 / 255, 1], -3, 7, [-50, 50, -50, 50], blocky_color);
-  }
+  // document.getElementById("switch").onclick = function() {
+  //   if (terrain.done === false) return;
+  //   if (!blocky_color) {
+  //     this.innerHTML = "Switch to smoothly colored hills";
+  //   } else {
+  //     this.innerHTML = "Switch to less-smoothly colored hills";
+  //   }
+  //   blocky_color = !blocky_color;
+  //   alert("This reloads the terrain, which might take a while");
+  //   terrain = new Terrain("heightMap", [153 / 255, 0 / 255, 51 / 255, 1], -3, 7, [-50, 50, -50, 50], blocky_color);
+  // }
 }
 
 function connectVariablesToGLSL() {
@@ -196,6 +247,24 @@ function connectVariablesToGLSL() {
   u_GlobalRotateMatrix = gl.getUniformLocation(gl.program, "u_GlobalRotateMatrix");
   if (!u_GlobalRotateMatrix) {
     console.log('Failed to get the storage location of u_GlobalRotateMatrix');
+    return;
+  }
+
+  u_LightPos = gl.getUniformLocation(gl.program, "u_LightPos");
+  if (!u_LightPos) {
+    console.log('Failed to get the storage location of u_LightPos');
+    return;
+  }
+
+  u_CameraPos = gl.getUniformLocation(gl.program, "u_CameraPos");
+  if (!u_CameraPos) {
+    console.error('Failed to get the storage location of u_CameraPos');
+    return -1;
+  }
+
+  u_NormalMatrix = gl.getUniformLocation(gl.program, "u_NormalMatrix");
+  if (!u_NormalMatrix) {
+    console.log('Failed to get the storage location of u_NormalMatrix');
     return;
   }
 
@@ -356,6 +425,7 @@ let rotateX = 0;
 let sableye = null;
 
 let terrain = null;
+let light = null;
 
 // Gets map position I am looking at
 function getNearestMapPos() {
@@ -411,7 +481,7 @@ function main() {
   g_translateMatrix = new Matrix4();
 
   // Initialize terrain
-  terrain = new Terrain("heightMap", [153 / 255, 0 / 255, 51 / 255, 1], -3, 7, [-50, 50, -50, 50], blocky_color);
+  // terrain = new Terrain("heightMap", [153 / 255, 0 / 255, 51 / 255, 1], -3, 7, [-50, 50, -50, 50], blocky_color);
 
   // Initialize cube map
   for (let i = 0; i < world_width; i++) {
@@ -421,6 +491,17 @@ function main() {
     }
     map.push(row);
   }
+
+  // Draw Light
+  let lightTransforms = new Matrix4();
+  lightTransforms.translate(0, 50, 0);
+  lightTransforms.scale(5, 5, 5);
+  light = new Cube([1, 1, 0, 1], lightTransforms);
+
+  let lightPos = lightTransforms.multiplyVector3(new Vector4([0, 0, 0, 1]));
+  console.log(lightPos.elements.slice(0,3));
+  // set the light position
+  gl.uniform3fv(u_LightPos, lightPos.elements.slice(0,3));
 
   map[66][54] = [CRYSTAL, 1];
   map[87][49] = [CRYSTAL, 1];
@@ -532,7 +613,8 @@ function renderScene() {
     buildCubes();
   }
   g_shapesList = cubes.slice();
-  g_shapesList.push(terrain);
+  // g_shapesList.push(terrain);
+  g_shapesList.push(light);
 
   // Ground
   M = new Matrix4();

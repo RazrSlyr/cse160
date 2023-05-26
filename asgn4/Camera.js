@@ -33,6 +33,9 @@ class Camera {
         this.eye.add(moveAmount);
         this.at.add(moveAmount);
 
+        // Update camera position
+        gl.uniform3fv(u_CameraPos, this.eye.elements);
+
         // Rotate (Y-Axis)
         // reset vars
         forward = this.getForward();
