@@ -76,7 +76,7 @@ class Prism {
             this.sideTexArr.set(sideUV);
         }
 
-        this.sfNormalsArray = null;
+        this.sfNormalsArrays = null;
     }
 
     drawTopFace(rgba, inc) {
@@ -202,14 +202,15 @@ class Prism {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
         // Each coord has 3 parts
         gl.vertexAttribPointer(a_Normal, 3, gl.FLOAT, false, 0, 0);
-        // // Enable the assignment to a_Normal variable
+        // Enable the assignment to a_Normal variable
         gl.enableVertexAttribArray(a_Normal);
-        // // Buffer data
+        // Buffer data
         gl.bufferData(gl.ARRAY_BUFFER, this.bfNormalsArray, gl.DYNAMIC_DRAW);
 
         // Draw the triangles
         gl.drawArrays(gl.TRIANGLE_FAN, 0, this.face.length);
         gl.disableVertexAttribArray(a_UV);
+        gl.disableVertexAttribArray(a_Normal);
 
         // Update rgba
         for (let i = 0; i < 3; i++) {
@@ -224,7 +225,7 @@ class Prism {
         // Initialize Side Arrays (if not already done)
         if (this.sideArrays == null) {
             this.sideArrays = [];
-            // this.sfNormalsArray = [];
+            this.sfNormalsArrays = [];
             for (let i = 0; i < this.face.length; i += 1) {
                 let vertices = [];
                 // Add top point
@@ -240,18 +241,18 @@ class Prism {
                 this.sideArrays[i].set(vertices);
 
                 // Compute Normals (for now, normalized version of vertices)
-                // let normals = []
-                // // Add top point
-                // normals = normals.concat(this.top[i % this.top.length].normalize().toArray());
-                // // Add bottom point
-                // normals = normals.concat(this.bottom[i % this.bottom.length].normalize().toArray());
-                // // Add other top point
-                // normals = normals.concat(this.top[(i + 1) % this.top.length].normalize().toArray());
-                // // Add other bottom point
-                // normals = normals.concat(this.bottom[(i + 1) % this.bottom.length].normalize().toArray());
+                let normals = []
+                // Add top point
+                normals = normals.concat(this.top[i % this.top.length].normalize().toArray());
+                // Add bottom point
+                normals = normals.concat(this.bottom[i % this.bottom.length].normalize().toArray());
+                // Add other top point
+                normals = normals.concat(this.top[(i + 1) % this.top.length].normalize().toArray());
+                // Add other bottom point
+                normals = normals.concat(this.bottom[(i + 1) % this.bottom.length].normalize().toArray());
                 
-                // this.sfNormalsArray.push(new Float32Array(12));
-                // this.sfNormalsArray[i].set(normals);
+                this.sfNormalsArrays.push(new Float32Array(12));
+                this.sfNormalsArrays[i].set(normals);
             }
         }
         // Draw all sides
@@ -286,13 +287,13 @@ class Prism {
             // Load the normals data
 
             // Bind the buffer object to target
-            // gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
-            // // Each coord has 3 parts
-            // gl.vertexAttribPointer(a_Normal, 3, gl.FLOAT, false, 0, 0);
-            // // // Enable the assignment to a_Normal variable
-            // gl.enableVertexAttribArray(a_Normal);
-            // // // Buffer data
-            // gl.bufferData(gl.ARRAY_BUFFER, this.sfNormalsArray, gl.DYNAMIC_DRAW);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
+            // Each coord has 3 parts
+            gl.vertexAttribPointer(a_Normal, 3, gl.FLOAT, false, 0, 0);
+            // // Enable the assignment to a_Normal variable
+            gl.enableVertexAttribArray(a_Normal);
+            // // Buffer data
+            gl.bufferData(gl.ARRAY_BUFFER, this.sfNormalsArrays, gl.DYNAMIC_DRAW);
 
             // Draw the triangles
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -303,6 +304,7 @@ class Prism {
         }
 
         gl.disableVertexAttribArray(a_UV);
+        gl.disableVertexAttribArray(a_Normal);
 
         rgba = [r, g, b, a];
         return rgba;
