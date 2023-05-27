@@ -41,8 +41,6 @@ var FSHADER_SOURCE = `
   varying vec3 v_Normal;
   varying vec4 v_VertPos;
 
-  uniform int u_Disable;
-
   uniform vec4 u_FragColor;
   // Sampler for texture
   uniform sampler2D u_Sampler0;
@@ -56,15 +54,18 @@ var FSHADER_SOURCE = `
   // Lighting uniforms
   uniform vec3 u_LightPos;
   uniform vec3 u_CameraPos;
+  uniform vec3 u_DiffuseColor;
+  uniform vec3 u_AmbColor;
+  uniform vec3 u_SpecColor;
+  uniform int u_Disable;
+  uniform int u_ShowNorms;
 
   void main() {
     //gl_FragColor = u_FragColor;
-
-    vec3 u_SpecColor = vec3(1.0, 1.0, 1.0); // white light
-    vec3 u_AmbColor = vec3(1.0, 1.0, 1.0) * 0.2;
-    vec3 u_DiffuseColor =  vec3(1.0, 1.0, 1.0) *0.7;
     
-    if (u_WhichTexture == -2) { // use varying color (currently only for heightmap)
+    if (u_ShowNorms == 1) {
+      gl_FragColor = vec4(v_Normal, 1.0);
+    } else if (u_WhichTexture == -2) { // use varying color (currently only for heightmap)
       gl_FragColor = v_Color;
     } else if (u_WhichTexture == -1) {
       gl_FragColor = u_FragColor;
@@ -138,6 +139,11 @@ let u_ProjectionMatrix;
 let u_LightPos;
 let u_CameraPos;
 let u_Disable;
+let u_DiffuseColor;
+let u_AmbColor;
+let u_SpecColor;
+let u_ShowNorms;
+
 
 let u_Samplers = [];
 let n_textures = 5;
@@ -165,6 +171,21 @@ let loading = null;
 
 // Game related stats
 let n_sableye = 5;
+
+// Light Info
+let light = null;
+let lightTransforms = null;
+let lightPos = null;
+const LEFT = -1;
+const RIGHT = 1;
+let lightMoveDir = LEFT;
+let lightSpeed = 100 / 60 / 10;
+let lightDisabled = false;
+let normsShowing = false;
+let diffuseColor = new Float32Array([0.7, 0.7, 0.7]);
+let ambientColor = new Float32Array([0.3, 0.3, 0.3]);
+let specColor = new Float32Array([1, 1, 1]);
+
 
 
 
@@ -200,6 +221,8 @@ function setUpWebGL() {
 }
 
 function setUpHTMLActions() {
+
+  // Disable Lighting
   document.getElementById("disable").addEventListener("click", function () {
     if (lightDisabled) {
       this.innerHTML = "Disable Lighting";
@@ -209,7 +232,109 @@ function setUpHTMLActions() {
     // Toggle light
     lightDisabled = !lightDisabled;
     gl.uniform1i(u_Disable, lightDisabled);
+  });
 
+  // Show/Disable Normals
+  document.getElementById("normals").addEventListener("click", function () {
+    if (normsShowing) {
+      this.innerHTML = "Visualize Normals";
+    } else {
+      this.innerHTML = "Revert to Actual Colors";
+    }
+    // Toggle light
+    normsShowing = !normsShowing;
+    console.log(normsShowing);
+    gl.uniform1i(u_ShowNorms, normsShowing);
+  });
+
+  // Light Position
+  document.getElementById("lightX").addEventListener("input", function () {
+    lightPos.elements[0] = this.value;
+  });
+
+  document.getElementById("lightY").addEventListener("input", function () {
+    lightPos.elements[1] = this.value;
+  });
+
+  document.getElementById("lightZ").addEventListener("input", function () {
+    lightPos.elements[2] = this.value;
+  });
+
+  // Colors
+
+  // Diffuse 
+  const updateDiffuse = () => {
+    document.getElementById("dColor").style.backgroundColor = `rgb(${diffuseColor[0] * 255} ${diffuseColor[1] * 255} ${diffuseColor[2] * 255})`;
+  }
+
+  updateDiffuse();
+
+  document.getElementById("dRed").addEventListener("input", function () {
+    diffuseColor[0] = this.value / 255;
+    gl.uniform3fv(u_DiffuseColor, diffuseColor);
+    updateDiffuse();
+  });
+
+  document.getElementById("dGreen").addEventListener("input", function () {
+    diffuseColor[1] = this.value / 255;
+    gl.uniform3fv(u_DiffuseColor, diffuseColor);
+    updateDiffuse();
+  });
+
+  document.getElementById("dBlue").addEventListener("input", function () {
+    diffuseColor[2] = this.value / 255;
+    gl.uniform3fv(u_DiffuseColor, diffuseColor);
+    updateDiffuse();
+  });
+
+  // Ambient
+  const updateAmbient = () => {
+    document.getElementById("aColor").style.backgroundColor = `rgb(${ambientColor[0] * 255} ${ambientColor[1] * 255} ${ambientColor[2] * 255})`;
+  }
+
+  updateAmbient();
+
+  document.getElementById("aRed").addEventListener("input", function () {
+    ambientColor[0] = this.value / 255;
+    gl.uniform3fv(u_AmbColor, ambientColor);
+    updateAmbient();
+  });
+
+  document.getElementById("aGreen").addEventListener("input", function () {
+    ambientColor[1] = this.value / 255;
+    gl.uniform3fv(u_AmbColor, ambientColor);
+    updateAmbient();
+  });
+
+  document.getElementById("aBlue").addEventListener("input", function () {
+    ambientColor[2] = this.value / 255;
+    gl.uniform3fv(u_AmbColor, ambientColor);
+    updateAmbient();
+  });
+
+  // Specular
+  const updateSpecular = () => {
+    document.getElementById("sColor").style.backgroundColor = `rgb(${specColor[0] * 255} ${specColor[1] * 255} ${specColor[2] * 255})`;
+  }
+
+  updateSpecular();
+
+  document.getElementById("sRed").addEventListener("input", function () {
+    specColor[0] = this.value / 255;
+    gl.uniform3fv(u_SpecColor, specColor);
+    updateSpecular();
+  });
+
+  document.getElementById("sGreen").addEventListener("input", function () {
+    specColor[1] = this.value / 255;
+    gl.uniform3fv(u_SpecColor, specColor);
+    updateSpecular();
+  });
+
+  document.getElementById("sBlue").addEventListener("input", function () {
+    specColor[2] = this.value / 255;
+    gl.uniform3fv(u_SpecColor, specColor);
+    updateSpecular();
   });
 }
 
@@ -315,6 +440,33 @@ function connectVariablesToGLSL() {
   u_Disable = gl.getUniformLocation(gl.program, "u_Disable");
   if (!u_Disable) {
     console.error('Failed to get the storage location of u_Disable');
+    return -1;
+  }
+
+  u_DiffuseColor = gl.getUniformLocation(gl.program, "u_DiffuseColor");
+  if (!u_DiffuseColor) {
+    console.error("Failed to get storage location of u_DiffuseColor");
+  }
+  // Set starting value
+  gl.uniform3fv(u_DiffuseColor, diffuseColor);
+
+  u_AmbColor = gl.getUniformLocation(gl.program, "u_AmbColor");
+  if (!u_AmbColor) {
+    console.error("Failed to get storage location of u_AmbColor");
+  }
+  // Set starting value
+  gl.uniform3fv(u_AmbColor, ambientColor);
+
+  u_SpecColor = gl.getUniformLocation(gl.program, "u_SpecColor");
+  if (!u_SpecColor) {
+    console.error("Failed to get storage location of u_SpecColor");
+  }
+  // Set starting value
+  gl.uniform3fv(u_SpecColor, specColor);
+
+  u_ShowNorms = gl.getUniformLocation(gl.program, "u_ShowNorms");
+  if (!u_ShowNorms) {
+    console.error('Failed to get the storage location of u_ShowNorms');
     return -1;
   }
 
@@ -442,16 +594,6 @@ let sableye = null;
 
 let terrain = null;
 
-// Light Info
-let light = null;
-let lightTransforms = null;
-let lightPos = null;
-const LEFT = -1;
-const RIGHT = 1;
-let lightMoveDir = LEFT;
-let lightSpeed = 100 / 60 / 10;
-let lightDisabled = false;
-
 // Gets map position I am looking at
 function getNearestMapPos() {
   let lookingAt = camera.getForward().mul(2).add(camera.eye);
@@ -515,6 +657,7 @@ function lightTick() {
       lightMoveDir = LEFT;
     }
   }
+
   // update transform
   lightTransforms = new Matrix4();
   lightTransforms.translate(lightPos.elements[0], lightPos.elements[1], lightPos.elements[2]);
@@ -523,6 +666,9 @@ function lightTick() {
 
   // set the light position
   gl.uniform3fv(u_LightPos, lightPos.elements.slice(0, 3));
+
+  // Update Slider
+  document.getElementById("lightX").value = lightPos.elements[0];
 }
 
 
