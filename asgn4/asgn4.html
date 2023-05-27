@@ -21,7 +21,21 @@
     <div class="grid grid-cols-3 place-items-center h-full w-full">
       <div class="col-span-3 place-items-center">
         <button class="text-xl p-3 font-bold text-white bg-blue-400 rounded-full" id="disable">Disable Lighting</button>
-        <button class="text-xl p-3 font-bold text-white bg-blue-400 rounded-full" id="normals">Visualize Normals</button>
+        <button class="text-xl p-3 font-bold text-white bg-blue-400 rounded-full" id="normals">Visualize
+          Normals</button>
+        <div>
+          <p class="text-center text-lg">Total Intensity By Color</p>
+          <div>
+            <span>Red: </span><input id="red" type="range" min="0" max="255" value="255">
+          </div>
+          <div>
+            <span>Green: </span><input id="green" type="range" min="0" max="255" value="255">
+          </div>
+          <div>
+            <span>Blue: </span><input id="blue" type="range" min="0" max="255" value="255">
+          </div>
+          <div class="w-16 h-16 rounded-full border border-1 border-black" id="color"></div>
+        </div>
         <p class="text-xl text-center my-3">
           Move Light
         </p>
@@ -54,13 +68,13 @@
         Ambient
         <p class="text-center text-lg">Intensity By Color</p>
         <div>
-          <span>Red: </span><input id="aRed" type="range" min="0" max="255" value="85">
+          <span>Red: </span><input id="aRed" type="range" min="0" max="255" value="76">
         </div>
         <div>
-          <span>Green: </span><input id="aGreen" type="range" min="0" max="255" value="85">
+          <span>Green: </span><input id="aGreen" type="range" min="0" max="255" value="76">
         </div>
         <div>
-          <span>Blue: </span><input id="aBlue" type="range" min="0" max="255" value="85">
+          <span>Blue: </span><input id="aBlue" type="range" min="0" max="255" value="76">
         </div>
         <div class="w-16 h-16 rounded-full border border-1 border-black" id="aColor"></div>
       </div>
@@ -68,13 +82,13 @@
         Specular
         <p class="text-center text-lg">Intensity By Color</p>
         <div>
-          <span>Red: </span><input id="sRed" type="range" min="0" max="255" value="85">
+          <span>Red: </span><input id="sRed" type="range" min="0" max="255" value="255">
         </div>
         <div>
-          <span>Green: </span><input id="sGreen" type="range" min="0" max="255" value="85">
+          <span>Green: </span><input id="sGreen" type="range" min="0" max="255" value="255">
         </div>
         <div>
-          <span>Blue: </span><input id="sBlue" type="range" min="0" max="255" value="85">
+          <span>Blue: </span><input id="sBlue" type="range" min="0" max="255" value="255">
         </div>
         <div class="w-16 h-16 rounded-full border border-1 border-black" id="sColor"></div>
       </div>

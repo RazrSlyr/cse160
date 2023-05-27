@@ -57,6 +57,7 @@ var FSHADER_SOURCE = `
   uniform vec3 u_DiffuseColor;
   uniform vec3 u_AmbColor;
   uniform vec3 u_SpecColor;
+  uniform vec3 u_LightColor;
   uniform int u_Disable;
   uniform int u_ShowNorms;
 
@@ -95,7 +96,7 @@ var FSHADER_SOURCE = `
     vec3 lightVector = u_LightPos - vec3(v_VertPos);
     float r = length(lightVector);
 
-    // check if you're the light
+    // check if you're the light (or right next to it)
     if (r < 5.0) {
       return;
     }
@@ -104,16 +105,16 @@ var FSHADER_SOURCE = `
     vec3 L = normalize(lightVector);
     vec3 N = normalize(v_Normal);
     float nDotL = max(dot(N, L), 0.0);
-    vec3 diffuse = vec3(gl_FragColor) * nDotL * u_DiffuseColor;
+    vec3 diffuse = vec3(gl_FragColor) * nDotL * u_DiffuseColor * u_LightColor;
 
     // Ambient
-    vec3 ambient = vec3(gl_FragColor) * u_AmbColor;
+    vec3 ambient = vec3(gl_FragColor) * u_AmbColor * u_LightColor;
 
     // Specular
     float specCoef = 100.0;
     vec3 R = reflect(-L, N);
     vec3 E = normalize(u_CameraPos - vec3(v_VertPos));
-    vec3 specular = vec3(gl_FragColor) * u_SpecColor * pow(max(dot(E, R), 0.0), specCoef);
+    vec3 specular = vec3(gl_FragColor) * u_SpecColor * pow(max(dot(E, R), 0.0), specCoef) * u_LightColor;
 
     gl_FragColor = vec4(diffuse + ambient + specular, gl_FragColor.a);
 
@@ -143,6 +144,7 @@ let u_DiffuseColor;
 let u_AmbColor;
 let u_SpecColor;
 let u_ShowNorms;
+let u_LightColor;
 
 
 let u_Samplers = [];
@@ -185,6 +187,7 @@ let normsShowing = false;
 let diffuseColor = new Float32Array([0.7, 0.7, 0.7]);
 let ambientColor = new Float32Array([0.3, 0.3, 0.3]);
 let specColor = new Float32Array([1, 1, 1]);
+let lightColor = new Float32Array([1, 1, 1]);
 
 
 
@@ -336,6 +339,31 @@ function setUpHTMLActions() {
     gl.uniform3fv(u_SpecColor, specColor);
     updateSpecular();
   });
+
+  // General Lighting
+  const updateLight = () => {
+    document.getElementById("color").style.backgroundColor = `rgb(${lightColor[0] * 255} ${lightColor[1] * 255} ${lightColor[2] * 255})`;
+  }
+
+  updateLight();
+
+  document.getElementById("red").addEventListener("input", function () {
+    lightColor[0] = this.value / 255;
+    gl.uniform3fv(u_LightColor, lightColor);
+    updateLight();
+  });
+
+  document.getElementById("green").addEventListener("input", function () {
+    lightColor[1] = this.value / 255;
+    gl.uniform3fv(u_LightColor, lightColor);
+    updateLight();
+  });
+
+  document.getElementById("blue").addEventListener("input", function () {
+    lightColor[2] = this.value / 255;
+    gl.uniform3fv(u_LightColor, lightColor);
+    updateLight();
+  });
 }
 
 function connectVariablesToGLSL() {
@@ -469,6 +497,13 @@ function connectVariablesToGLSL() {
     console.error('Failed to get the storage location of u_ShowNorms');
     return -1;
   }
+
+  u_LightColor = gl.getUniformLocation(gl.program, "u_LightColor");
+  if (!u_LightColor) {
+    console.error("Failed to get storage location of u_LightColor");
+  }
+  // Set starting value
+  gl.uniform3fv(u_LightColor, lightColor);
 
 }
 
