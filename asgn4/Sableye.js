@@ -1,9 +1,3 @@
-// General animation stats
-let fps = 60;
-let animating = true;
-let start = undefined;
-let previousTimestamp = undefined;
-
 // Arm animation stats
 let baseArmRotationSpeed = 0.06;
 let armRotationLimit = 15;
@@ -64,16 +58,7 @@ let legWidth = 0.15;
 let legDepth = 0.15;
 let legHeight = 0.3;
 
-// Leg Angles
-let leftLegAngles = {
-    hip: 0,
-    knee: -45,
-}
 
-let rightLegAngles = {
-    hip: 0,
-    knee: -45,
-}
 
 // Claw/Finger Dimensions
 let clawHeight = armHeight / 2;
@@ -85,38 +70,11 @@ let bodyWidth = 0.4;
 let bodyHeight = 0.6;
 let bodyDepth = 0.5;
 
-// Head Angle
-let headAngle = 0;
-
 // Colors
 let bodyPurple = [51 / 255, 51 / 255, 204 / 255, 1];
 let eye = [179 / 255, 224 / 255, 246, 255];
 let centerGem = [202 / 255, 34 / 255, 30 / 255, 1];
 let blueGem = [18 / 255, 176 / 255, 227 / 255, 1];
-let darkerBlueGem = []
-
-// Camera Control (via mouse)
-let prevMouseX = undefined;
-let prevMouseY = undefined;
-let mouseCameraSpeed = 0.5;
-
-// Vars for the Poke Animation
-let baseShoulderSpeed = 2.4;
-let baseElbowSpeed = 4.8;
-let baseHeadSpeed = 4.8;
-let baseKneeSpeed = 2.4;
-let baseWaveSpeed = 5;
-
-let raisedShoulder = false;
-let raisedElbow = false;
-let tiltedElbow = false;
-let tiltedHead = false;
-let stretchedKnee = false;
-let waving = false;
-let wavedRight = false;
-let wavedLeft = false;
-let doneWaving = false;
-let shiftPressed = false;
 
 
 class Sableye {
@@ -125,6 +83,22 @@ class Sableye {
         this.matrix = matrix;
         if (matrix === undefined) this.matrix = new Matrix4();
         this.shapesList = null;
+
+        // define all animation things
+        this.headAngle = 0;
+
+        // Leg Angles
+        this.leftLegAngles = {
+            hip: 0,
+            knee: -45,
+        }
+
+        this.rightLegAngles = {
+            hip: 0,
+            knee: -45,
+        }
+
+        this.frozen = true;
     }
 
     addBody() {
@@ -328,7 +302,7 @@ class Sableye {
     addLeftLeg() {
         let M = new Matrix4(this.matrix);
         // Top half
-        M.rotate(leftLegAngles.hip, 1, 0, 0);
+        M.rotate(this.leftLegAngles.hip, 1, 0, 0);
         M.translate(bodyWidth / 2 - legWidth / 2 - 0.01, -bodyHeight / 2 - legHeight / 2, 0);
         let M2 = new Matrix4(M);
         M.scale(legWidth, legHeight, legDepth);
@@ -338,7 +312,7 @@ class Sableye {
         M = new Matrix4(M2);
 
         M.translate(0, -legHeight / 2, 0);
-        M.rotate(leftLegAngles.knee, 1, 0, 0);
+        M.rotate(this.leftLegAngles.knee, 1, 0, 0);
         M.translate(0, -legHeight / 2 + 0.074, 0);
         M.scale(legWidth, legHeight, legDepth);
         this.shapesList.push(new Cube(bodyPurple, M));
@@ -347,7 +321,7 @@ class Sableye {
     addRightLeg() {
         let M = new Matrix4(this.matrix);
         // Top half
-        M.rotate(rightLegAngles.hip, 1, 0, 0);
+        M.rotate(this.rightLegAngles.hip, 1, 0, 0);
         M.translate(-bodyWidth / 2 + legWidth / 2 + 0.01, -bodyHeight / 2 - legHeight / 2, 0);
         let M2 = new Matrix4(M);
         M.scale(legWidth, legHeight, legDepth);
@@ -357,7 +331,7 @@ class Sableye {
         M = new Matrix4(M2);
 
         M.translate(0, -legHeight / 2, 0);
-        M.rotate(rightLegAngles.knee, 1, 0, 0);
+        M.rotate(this.rightLegAngles.knee, 1, 0, 0);
         M.translate(0, -legHeight / 2 + 0.074, 0);
         M.scale(legWidth, legHeight, legDepth);
         this.shapesList.push(new Cube(bodyPurple, M));
@@ -447,7 +421,7 @@ class Sableye {
         }
         let M = new Matrix4(this.matrix);
         M.translate(0, bodyHeight - 0.1, 0);
-        M.rotate(headAngle, 0, 0, 1);
+        M.rotate(this.headAngle, 0, 0, 1);
         let M2 = new Matrix4(M);
         M.scale(0.8, 0.75 * 0.8, bodyDepth + 0.01);
         M.rotate(-90, 1, 0, 0);
@@ -457,23 +431,169 @@ class Sableye {
         this.addEars(M2);
     }
 
+    addParts() {
+        this.shapesList = [];
+        this.addBody();
+        this.addLeftArm();
+        this.addRightArm();
+        this.addCenterGem();
+        this.addLeftLeg();
+        this.addRightLeg();
+        this.addHead();
+        this.addBackGems();
+    }
 
 
     render() {
         if (this.shapesList === null) {
-            this.shapesList = [];
-            this.addBody();
-            this.addLeftArm();
-            this.addRightArm();
-            this.addCenterGem();
-            this.addLeftLeg();
-            this.addRightLeg();
-            this.addHead();
-            this.addBackGems();
+            this.addParts();
         }
         for (let i = 0; i < this.shapesList.length; i++) {
             let shape = this.shapesList[i];
             shape.render();
         }
+    }
+
+    tick(fps) {
+        if (fps == undefined || this.frozen) {
+            return;
+        }
+        console.log("tick time");
+
+        // Do changes
+        let armRotationSpeed = Math.min(baseArmRotationSpeed * 60 / fps, baseArmRotationSpeed * 6);
+        let fingerRotationSpeed = Math.min(baseFingerRotationSpeed * 60 / fps, baseArmRotationSpeed * 6);
+        let runSpeed = Math.min(baseRunSpeed * 60 / fps, baseRunSpeed * 6);
+
+        // Finger Movements
+        for (let i = 0; i < 3; i++) {
+            // Left Fingers
+            if (leftFingersGoingUp[i]) {
+                if (leftArmAngles.fingers[i] < fingerRotationLimit) {
+                    leftArmAngles.fingers[i] += fingerRotationSpeed * (fingerRotationLimit - Math.abs(leftArmAngles.fingers[i]) + fingerRotationLimit / 3);
+                } else {
+                    leftFingersGoingUp[i] = false;
+                }
+            } else {
+                if (leftArmAngles.fingers[i] > -fingerRotationLimit) {
+                    leftArmAngles.fingers[i] -= fingerRotationSpeed * (fingerRotationLimit - Math.abs(leftArmAngles.fingers[i]) + fingerRotationLimit / 3);
+                } else {
+                    leftFingersGoingUp[i] = true;
+                }
+            }
+
+            // Right Fingers
+            if (rightFingersGoingUp[i]) {
+                if (rightArmAngles.fingers[i] < fingerRotationLimit) {
+                    rightArmAngles.fingers[i] += fingerRotationSpeed * (fingerRotationLimit - Math.abs(rightArmAngles.fingers[i]) + fingerRotationLimit / 3);
+                } else {
+                    rightFingersGoingUp[i] = false;
+                }
+            } else {
+                if (rightArmAngles.fingers[i] > -fingerRotationLimit) {
+                    rightArmAngles.fingers[i] -= fingerRotationSpeed * (fingerRotationLimit - Math.abs(rightArmAngles.fingers[i]) + fingerRotationLimit / 3);
+                } else {
+                    rightFingersGoingUp[i] = true;
+                }
+            }
+        }
+
+        // Left Arm Movements
+        if (leftShoulderGoingDown) {
+            if (leftArmAngles.shoulder > -armRotationLimit) {
+                leftArmAngles.shoulder -= armRotationSpeed * (armRotationLimit - Math.abs(leftArmAngles.shoulder) + armRotationLimit / 3);
+            } else {
+                leftShoulderGoingDown = !leftShoulderGoingDown;
+            }
+        } else {
+            if (leftArmAngles.shoulder < armRotationLimit) {
+                leftArmAngles.shoulder += armRotationSpeed * (armRotationLimit - Math.abs(leftArmAngles.shoulder) + armRotationLimit / 3);
+            } else {
+                leftShoulderGoingDown = !leftShoulderGoingDown;
+            }
+        }
+
+        if (leftElbowGoingDown) {
+            if (leftArmAngles.elbow.x > -elbowRotationLimit) {
+                leftArmAngles.elbow.x -= armRotationSpeed * (elbowRotationLimit - Math.abs(leftArmAngles.elbow.x) + elbowRotationLimit / 3);
+            } else {
+                leftElbowGoingDown = !leftElbowGoingDown;
+            }
+        } else {
+            if (leftArmAngles.elbow.x < elbowRotationLimit) {
+                leftArmAngles.elbow.x += armRotationSpeed * (elbowRotationLimit - Math.abs(leftArmAngles.elbow.x) + elbowRotationLimit / 3);
+            } else {
+                leftElbowGoingDown = !leftElbowGoingDown;
+            }
+        }
+
+        // Right Arm Movements
+        if (rightShoulderGoingDown) {
+            if (rightArmAngles.shoulder < armRotationLimit) {
+                rightArmAngles.shoulder += armRotationSpeed * (armRotationLimit - Math.abs(rightArmAngles.shoulder) + armRotationLimit / 3);
+            } else {
+                rightShoulderGoingDown = !rightShoulderGoingDown;
+            }
+        } else {
+            if (rightArmAngles.shoulder > -armRotationLimit) {
+                rightArmAngles.shoulder -= armRotationSpeed * (armRotationLimit - Math.abs(rightArmAngles.shoulder) + armRotationLimit / 3);
+            } else {
+                rightShoulderGoingDown = !rightShoulderGoingDown;
+            }
+        }
+
+
+        if (rightElbowGoingDown) {
+            if (rightArmAngles.elbow.x > -elbowRotationLimit) {
+                rightArmAngles.elbow.x -= armRotationSpeed * (elbowRotationLimit - Math.abs(rightArmAngles.elbow.x) + elbowRotationLimit / 3);
+            } else {
+                rightElbowGoingDown = !rightElbowGoingDown;
+            }
+        } else {
+            if (rightArmAngles.elbow.x < elbowRotationLimit) {
+                rightArmAngles.elbow.x += armRotationSpeed * (elbowRotationLimit - Math.abs(rightArmAngles.elbow.x) + elbowRotationLimit / 3);
+            } else {
+                rightElbowGoingDown = !rightElbowGoingDown;
+            }
+        }
+
+        // Leg Movements
+
+        // Right Leg
+        if (rightLegGoingForward) {
+            if (this.rightLegAngles.hip < hipRotationLimit) {
+                this.rightLegAngles.hip += runSpeed * (hipRotationLimit - Math.abs(this.rightLegAngles.hip) + hipRotationLimit / 3);
+            } else {
+                rightLegGoingForward = false;
+            }
+        }
+        else {
+            if (this.rightLegAngles.hip > -hipRotationLimit) {
+                this.rightLegAngles.hip -= runSpeed * (hipRotationLimit - Math.abs(this.rightLegAngles.hip) + hipRotationLimit / 3);
+            } else {
+                rightLegGoingForward = true;
+            }
+        }
+
+        // Left Leg
+        if (leftLegGoingForward) {
+            if (this.leftLegAngles.hip < hipRotationLimit) {
+                this.leftLegAngles.hip += runSpeed * (hipRotationLimit - Math.abs(this.leftLegAngles.hip) + hipRotationLimit / 3);
+            } else {
+                leftLegGoingForward = false;
+            }
+        }
+        else {
+            if (this.leftLegAngles.hip > -hipRotationLimit) {
+                this.leftLegAngles.hip -= runSpeed * (hipRotationLimit - Math.abs(this.leftLegAngles.hip) + hipRotationLimit / 3);
+            } else {
+                leftLegGoingForward = true;
+            }
+        }
+
+        this.leftLegAngles.knee = this.leftLegAngles.hip - 45;
+        this.rightLegAngles.knee = this.rightLegAngles.hip - 45;
+
+        this.addParts();
     }
 }

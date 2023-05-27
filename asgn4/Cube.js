@@ -32,6 +32,10 @@ class Cube {
         this.prism = new Prism(face, 1, color, matrix, faceUV, sideUV, texture);
     }
 
+    setMatrix(matrix) {
+        this.prism.matrix = matrix;
+    }
+
     setTexture(texture) {
         this.prism.texture = texture;
     }

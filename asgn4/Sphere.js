@@ -47,10 +47,10 @@ class Sphere {
                 this.normals = this.normals.concat(p1).concat(p2).concat(p3).concat(p4);
                 
                 this.uvCoords = this.uvCoords.concat([
-                    1, 0,
-                    0, 1,
-                    1, 1,
-                    0, 0
+                    t / Math.PI, r / Math.PI / 2,
+                    (t + dd) / Math.PI, r / Math.PI / 2,
+                    t / Math.PI, (r + dd) / Math.PI / 2,
+                    (t + dd) / Math.PI, (r + dd) / Math.PI / 2
                 ]);
             }
         }

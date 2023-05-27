@@ -30,8 +30,6 @@ var VSHADER_SOURCE = `
     v_UV = a_UV;
     v_Color = a_Color;
     v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
-    v_Normal = vec3(a_Normal);
-    
     v_VertPos = u_ModelMatrix * a_Position;
   }`;
 
@@ -43,6 +41,8 @@ var FSHADER_SOURCE = `
   varying vec3 v_Normal;
   varying vec4 v_VertPos;
 
+  uniform int u_Disable;
+
   uniform vec4 u_FragColor;
   // Sampler for texture
   uniform sampler2D u_Sampler0;
@@ -50,6 +50,7 @@ var FSHADER_SOURCE = `
   uniform sampler2D u_Sampler2;
   uniform sampler2D u_Sampler3;
   uniform sampler2D u_Sampler4;
+  uniform sampler2D u_Sampler5;
   uniform int u_WhichTexture;
 
   // Lighting uniforms
@@ -58,6 +59,10 @@ var FSHADER_SOURCE = `
 
   void main() {
     //gl_FragColor = u_FragColor;
+
+    vec3 u_SpecColor = vec3(1.0, 1.0, 1.0); // white light
+    vec3 u_AmbColor = vec3(1.0, 1.0, 1.0) * 0.2;
+    vec3 u_DiffuseColor =  vec3(1.0, 1.0, 1.0) *0.7;
     
     if (u_WhichTexture == -2) { // use varying color (currently only for heightmap)
       gl_FragColor = v_Color;
@@ -75,12 +80,13 @@ var FSHADER_SOURCE = `
       return;
     } else if (u_WhichTexture == 4) {
       gl_FragColor = vec4(texture2D(u_Sampler4, v_UV).rgb, 0.5);
-    } else if (u_WhichTexture == 5) {
-      // Visualize Normals
-      gl_FragColor = vec4(v_Normal, 1.0);
     } else {
       // Converts UV to color, used for debugging
       gl_FragColor = vec4(v_UV.x, (v_UV.x + v_UV.y) / 2.0, v_UV.y, 1.0);
+      return;
+    }
+
+    if (u_Disable == 1) {
       return;
     }
 
@@ -94,22 +100,19 @@ var FSHADER_SOURCE = `
     }
 
     // N dot L (for diffuse lighting)
-    float Id = 1.0;
     vec3 L = normalize(lightVector);
     vec3 N = normalize(v_Normal);
     float nDotL = max(dot(N, L), 0.0);
-    vec3 diffuse = vec3(gl_FragColor) * nDotL * Id;
+    vec3 diffuse = vec3(gl_FragColor) * nDotL * u_DiffuseColor;
 
     // Ambient
-    float Ia = 0.3;
-    vec3 ambient = vec3(gl_FragColor) * Ia;
+    vec3 ambient = vec3(gl_FragColor) * u_AmbColor;
 
     // Specular
-    float Is = 1.0;
-    float specCoef = 1.0;
+    float specCoef = 100.0;
     vec3 R = reflect(-L, N);
     vec3 E = normalize(u_CameraPos - vec3(v_VertPos));
-    vec3 specular = vec3(gl_FragColor) * Is * pow(max(dot(E, R), 0.0), 10.0);
+    vec3 specular = vec3(gl_FragColor) * u_SpecColor * pow(max(dot(E, R), 0.0), specCoef);
 
     gl_FragColor = vec4(diffuse + ambient + specular, gl_FragColor.a);
 
@@ -134,6 +137,7 @@ let u_ViewMatrix;
 let u_ProjectionMatrix;
 let u_LightPos;
 let u_CameraPos;
+let u_Disable;
 
 let u_Samplers = [];
 let n_textures = 5;
@@ -196,18 +200,17 @@ function setUpWebGL() {
 }
 
 function setUpHTMLActions() {
-  loading = document.getElementById("loading");
-  // document.getElementById("switch").onclick = function() {
-  //   if (terrain.done === false) return;
-  //   if (!blocky_color) {
-  //     this.innerHTML = "Switch to smoothly colored hills";
-  //   } else {
-  //     this.innerHTML = "Switch to less-smoothly colored hills";
-  //   }
-  //   blocky_color = !blocky_color;
-  //   alert("This reloads the terrain, which might take a while");
-  //   terrain = new Terrain("heightMap", [153 / 255, 0 / 255, 51 / 255, 1], -3, 7, [-50, 50, -50, 50], blocky_color);
-  // }
+  document.getElementById("disable").addEventListener("click", function () {
+    if (lightDisabled) {
+      this.innerHTML = "Disable Lighting";
+    } else {
+      this.innerHTML = "Enable Lighting";
+    }
+    // Toggle light
+    lightDisabled = !lightDisabled;
+    gl.uniform1i(u_Disable, lightDisabled);
+
+  });
 }
 
 function connectVariablesToGLSL() {
@@ -306,6 +309,12 @@ function connectVariablesToGLSL() {
   a_Normal = gl.getAttribLocation(gl.program, "a_Normal");
   if (!a_Normal) {
     console.error('Failed to get the storage location of a_Normal');
+    return -1;
+  }
+
+  u_Disable = gl.getUniformLocation(gl.program, "u_Disable");
+  if (!u_Disable) {
+    console.error('Failed to get the storage location of u_Disable');
     return -1;
   }
 
@@ -432,7 +441,16 @@ let rotateX = 0;
 let sableye = null;
 
 let terrain = null;
+
+// Light Info
 let light = null;
+let lightTransforms = null;
+let lightPos = null;
+const LEFT = -1;
+const RIGHT = 1;
+let lightMoveDir = LEFT;
+let lightSpeed = 100 / 60 / 10;
+let lightDisabled = false;
 
 // Gets map position I am looking at
 function getNearestMapPos() {
@@ -478,6 +496,36 @@ function addBlock() {
 }
 
 
+function lightTick() {
+
+  if (lightMoveDir === LEFT) {
+    // move left
+    lightPos.elements[0] -= lightSpeed;
+
+    // switch
+    if (lightPos.elements[0] < -50) {
+      lightMoveDir = RIGHT;
+    }
+  } else {
+    // move right
+    lightPos.elements[0] += lightSpeed;
+
+    // switch
+    if (lightPos.elements[0] > 50) {
+      lightMoveDir = LEFT;
+    }
+  }
+  // update transform
+  lightTransforms = new Matrix4();
+  lightTransforms.translate(lightPos.elements[0], lightPos.elements[1], lightPos.elements[2]);
+  lightTransforms.scale(5, 5, 5);
+  light.setMatrix(lightTransforms);
+
+  // set the light position
+  gl.uniform3fv(u_LightPos, lightPos.elements.slice(0, 3));
+}
+
+
 function main() {
   // Set up website and main canvas
   setUpHTMLActions();
@@ -489,7 +537,8 @@ function main() {
 
   let sphereMat = new Matrix4();
   sphereMat.translate(0, 5, 0);
-  sphere = new Sphere([1, 0, 0, 1], sphereMat, -1);
+  sphere = new Sphere([0.7, 0.7, 0.7, 1], sphereMat, -1);
+
 
   // Initialize terrain
   // terrain = new Terrain("heightMap", [153 / 255, 0 / 255, 51 / 255, 1], -3, 7, [-50, 50, -50, 50], blocky_color);
@@ -503,15 +552,20 @@ function main() {
     map.push(row);
   }
 
+  // Enable light
+  gl.uniform1i(u_Disable, lightDisabled);
+
   // Draw Light
-  let lightTransforms = new Matrix4();
+  lightTransforms = new Matrix4();
   lightTransforms.translate(0, 50, 0);
   lightTransforms.scale(5, 5, 5);
   light = new Cube([1, 1, 0, 1], lightTransforms);
 
-  let lightPos = lightTransforms.multiplyVector3(new Vector4([0, 0, 0, 1]));
+  lightPos = lightTransforms.multiplyVector3(new Vector4([0, 0, 0, 1]));
   // set the light position
   gl.uniform3fv(u_LightPos, lightPos.elements.slice(0, 3));
+
+  light.tick = lightTick;
 
   map[66][54] = [CRYSTAL, 1];
   map[87][49] = [CRYSTAL, 1];
@@ -573,6 +627,18 @@ function tick(timestamp) {
   rotateY = 0;
   rotateX = 0;
   renderScene();
+
+  // Do animations
+  let len = g_shapesList.length;
+  for (let i = 0; i < len; i++) {
+    let shape = g_shapesList[i];
+    shape.render();
+    // if that shape has a tick, tick
+    if (shape.tick !== undefined) {
+      shape.tick(my_fps);
+    }
+  }
+
   requestAnimationFrame(tick);
 }
 
@@ -665,5 +731,9 @@ function renderScene() {
   for (var i = 0; i < len; i++) {
     let shape = g_shapesList[i];
     shape.render();
+    // if that shape has a tick, tick
+    if (shape.tick !== undefined) {
+      shape.tick();
+    }
   }
 }
