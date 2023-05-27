@@ -30,6 +30,7 @@ var VSHADER_SOURCE = `
     v_UV = a_UV;
     v_Color = a_Color;
     v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
+    v_Normal = vec3(a_Normal);
     
     v_VertPos = u_ModelMatrix * a_Position;
   }`;
@@ -56,8 +57,8 @@ var FSHADER_SOURCE = `
   uniform vec3 u_CameraPos;
 
   void main() {
-
-    // gl_FragColor = u_FragColor;
+    //gl_FragColor = u_FragColor;
+    
     if (u_WhichTexture == -2) { // use varying color (currently only for heightmap)
       gl_FragColor = v_Color;
     } else if (u_WhichTexture == -1) {
@@ -74,8 +75,13 @@ var FSHADER_SOURCE = `
       return;
     } else if (u_WhichTexture == 4) {
       gl_FragColor = vec4(texture2D(u_Sampler4, v_UV).rgb, 0.5);
+    } else if (u_WhichTexture == 5) {
+      // Visualize Normals
+      gl_FragColor = vec4(v_Normal, 1.0);
     } else {
-      gl_FragColor = vec4(v_Normal, 1.0); // Here so compiler doesn't auto remove v_Normal, does nothing
+      // Converts UV to color, used for debugging
+      gl_FragColor = vec4(v_UV.x, (v_UV.x + v_UV.y) / 2.0, v_UV.y, 1.0);
+      return;
     }
 
     // Lighting
@@ -148,6 +154,7 @@ let world_depth = 100;
 const BLOCK = 0;
 const CRYSTAL = 1;
 let map = [];
+let sphere = null;
 
 let blocky_color = true;
 let loading = null;
@@ -453,7 +460,7 @@ function removeBlock() {
     if (n_sableye !== 0) {
       document.getElementById("n_sableye").innerHTML = `Number of Sableye Left: ${n_sableye}`;
     } else {
-      document.getElementById("n_sableye").innerHTML = `Congrats! You've freed them all!`;  
+      document.getElementById("n_sableye").innerHTML = `Congrats! You've freed them all!`;
     }
   }
   buildCubes();
@@ -480,6 +487,10 @@ function main() {
   g_rotateMatrix = new Matrix4();
   g_translateMatrix = new Matrix4();
 
+  let sphereMat = new Matrix4();
+  sphereMat.translate(0, 5, 0);
+  sphere = new Sphere([1, 0, 0, 1], sphereMat, -1);
+
   // Initialize terrain
   // terrain = new Terrain("heightMap", [153 / 255, 0 / 255, 51 / 255, 1], -3, 7, [-50, 50, -50, 50], blocky_color);
 
@@ -499,9 +510,8 @@ function main() {
   light = new Cube([1, 1, 0, 1], lightTransforms);
 
   let lightPos = lightTransforms.multiplyVector3(new Vector4([0, 0, 0, 1]));
-  console.log(lightPos.elements.slice(0,3));
   // set the light position
-  gl.uniform3fv(u_LightPos, lightPos.elements.slice(0,3));
+  gl.uniform3fv(u_LightPos, lightPos.elements.slice(0, 3));
 
   map[66][54] = [CRYSTAL, 1];
   map[87][49] = [CRYSTAL, 1];
@@ -615,6 +625,7 @@ function renderScene() {
   g_shapesList = cubes.slice();
   // g_shapesList.push(terrain);
   g_shapesList.push(light);
+  g_shapesList.push(sphere);
 
   // Ground
   M = new Matrix4();
