@@ -11,8 +11,6 @@ async function loadBirds() {
     loader.loadAsync('/10_The_threejs_Animation_System/assets/models/Stork.glb'),
   ]);
 
-  console.log('Squaaawk!', parrotData);
-
   const parrot = setupModel(parrotData);
   console.log(parrot);
   parrot.position.set(0, 0, 2.5);

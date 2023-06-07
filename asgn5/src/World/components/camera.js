@@ -5,6 +5,8 @@ function createCamera() {
 
   camera.position.set(0, 0, 10);
 
+  const maxSpeed = 5;
+
   return camera;
 }
 

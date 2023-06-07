@@ -7,7 +7,7 @@ function createLights() {
     0.5,
   );
 
-  const mainLight = new DirectionalLight('white', 3);
+  const mainLight = new DirectionalLight('white', 1);
   mainLight.position.set(10, 10, 10);
 
   return { ambientLight, mainLight };
