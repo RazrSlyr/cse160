@@ -19,7 +19,7 @@ class Lamp extends Group {
         head.translateY(3);
 
         // Add a Point light
-        let light = new PointLight("yellow", 2, 6);
+        let light = new PointLight("#ffffcc", 2, 6);
         light.position.copy(head.position);
         console.log(light);
         

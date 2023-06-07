@@ -10,7 +10,7 @@ import { Loop } from './systems/Loop.js';
 import { getDrawingMaterial, getGrassMaterial, getSkyboxMaterial } from './components/materials.js';
 import { createSphere } from './components/sphere.js';
 import { createTree } from './components/tree.js';
-import { Vector3, CanvasTexture } from '../../lib/three.module.js';
+import { Vector3, CanvasTexture, MeshBasicMaterial } from '../../lib/three.module.js';
 import { createRock } from './components/rock.js';
 
 import { FogExp2 } from '../../lib/three.module.js';
@@ -28,18 +28,6 @@ class World {
     camera = createCamera();
     renderer = createRenderer();
     scene = createScene();
-
-    // set up fog
-    const fogColor = 0x555577;
-    scene.timePassed = 0;
-    scene.fogDensity = 0.00;
-
-    // Fog that comes and goes
-    scene.tick = (delta) => {
-      scene.timePassed += delta / 5;
-      scene.fogDensity = Math.sin(scene.timePassed) / 30;
-      scene.fog = new FogExp2(fogColor, scene.fogDensity);
-    }
 
     loop = new Loop(camera, scene, renderer);
     container.append(renderer.domElement);
@@ -60,6 +48,31 @@ class World {
     mainLight.shadow.camera["right"] = 40;
     mainLight.shadow.camera["top"] = 40;
     mainLight.shadow.camera["bottom"] = -40;
+
+    // Main light visual (a yellow sphere)
+    const sun = createSphere(new MeshBasicMaterial({
+      color: "#ffffe6",
+    }));
+    sun.position.copy(mainLight.position);
+    sun.angle = 90;
+    sun.distance = 10;
+
+    sun.tick = function(delta) {
+      sun.angle = (sun.angle + 20 * delta) % 360;
+      sun.position.y = Math.sin(sun.angle / 180 * Math.PI) * sun.distance;
+      sun.position.z = Math.cos(sun.angle / 180 * Math.PI) * sun.distance;
+      mainLight.position.copy(sun.position);
+    }
+
+    // set up fog
+    const fogColor = 0x555577;
+    scene.fogDensity = 0.00;
+
+    // Fog that comes and goes
+    scene.tick = (delta) => {
+      scene.fogDensity = Math.max(-1 * Math.sin(sun.angle / 180 * Math.PI)  / 30, 0);
+      scene.fog = new FogExp2(fogColor, scene.fogDensity);
+    }
 
 
     // Ground
@@ -89,8 +102,8 @@ class World {
       drawing.material.map = texture;
     }
 
-    loop.updatables.push(controls, scene, drawing);
-    scene.add(ambientLight, mainLight, sky, ground, drawing, lamp);
+    loop.updatables.push(controls, scene, drawing, sun);
+    scene.add(ambientLight, mainLight, sky, ground, drawing, lamp, sun);
 
     const resizer = new Resizer(container, camera, renderer);
   }
