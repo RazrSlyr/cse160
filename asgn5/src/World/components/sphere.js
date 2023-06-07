@@ -7,3 +7,5 @@ function createSphere(material) {
 
     return mesh;
 }
+
+export { createSphere }
