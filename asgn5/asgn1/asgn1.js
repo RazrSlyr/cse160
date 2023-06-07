@@ -32,7 +32,7 @@ let g_selectedColor = [1, 1, 1, 1]; // Current drawing color
 let g_size = 10;
 let g_selectedShape = SHAPE_POINT;
 let g_numSegments = 10;
-let captured = false;
+let captured = true;
 
 // Copy versions for the second canvas
 let canvas2;
@@ -57,7 +57,8 @@ function setClasses() {
   document.getElementById("triangle").className = inactiveButton;
   document.getElementById("star").className = inactiveButton;
   document.getElementById("clear").className = inactiveButton;
-  document.getElementById("capture").className = activeButton;
+  document.getElementById("squirtle").className = inactiveButton;
+  
 
   // Set the CSS Classes of all the Text Inputs
   document.getElementById("red_text").className = textInput;
@@ -74,7 +75,7 @@ function deactivateButtons() {
   document.getElementById("square").className = inactiveButton;
   document.getElementById("circle").className = inactiveButton;
   document.getElementById("triangle").className = inactiveButton;
-  if (captured) document.getElementById("squirtle").className = inactiveButton;
+  document.getElementById("squirtle").className = inactiveButton;
 
 }
 
@@ -190,14 +191,6 @@ function setHTMLActions() {
     deactivateButtons();
     document.getElementById("squirtle").className = activeButton;
   };
-  // Capture button
-  document.getElementById("capture").onclick = () => {
-    if (captured) return;
-    captured = true;
-    document.getElementById("capture_text").innerHTML = "Success, you've caught the Squirtle! You've now unlocked the Squirtle brush in the Paint program! Use it enough and, who knows, you may find a shiny! (Color does not effect Squirtle Brush)";
-    document.getElementById("squirtle").innerHTML = "Squirtle";
-    document.getElementById("squirtle").onclick();
-  }
 }
 
 function setUpWebGL() {
@@ -255,63 +248,6 @@ function clearCanvas(r, g, b, a) {
   gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
-// These are all the set up functions but for the second canvas (the one with only squirtle)
-
-function setUpWebGL2() {
-  // Retrieve <canvas> element
-  canvas2 = document.getElementById('webgl2');
-
-  // Get the rendering context for WebGL
-  // This helps alleviate lag
-  gl2 = canvas2.getContext("webgl2", { preserveDrawingBuffer: true });
-  if (!gl2) {
-    console.log('Failed to get the rendering context for WebGL');
-    return;
-  }
-}
-
-function connectVariablesToGLSL2() {
-  // Initialize shaders
-  if (!initShaders(gl2, VSHADER_SOURCE, FSHADER_SOURCE)) {
-    console.log('Failed to intialize shaders.');
-    return;
-  }
-
-  // Get the storage location of a_Position
-  a_Position2 = gl2.getAttribLocation(gl2.program, 'a_Position');
-  if (a_Position2 < 0) {
-    console.log('Failed to get the storage location of a_Position');
-    return;
-  }
-
-  // Get the storage location of u_FragColor
-  u_FragColor2 = gl2.getUniformLocation(gl2.program, 'u_FragColor');
-  if (!u_FragColor2) {
-    console.log('Failed to get the storage location of u_FragColor');
-    return;
-  }
-
-  a_Size2 = gl2.getAttribLocation(gl2.program, "a_Size");
-  if (a_Size2 < 0) {
-    console.log('Failed to get the storage location of a_Size');
-    return;
-  }
-}
-
-function clearCanvas2(r, g, b, a) {
-  // Specify the color for clearing <canvas>
-  if (!(r == undefined ||
-    g == undefined ||
-    b == undefined ||
-    a == undefined))
-    gl2.clearColor(r, g, b, a);
-
-  // Clear <canvas>
-  gl2.clear(gl.COLOR_BUFFER_BIT);
-}
-
-
-
 function canvasCoordsToGL(x, y, rect) {
   let newX = ((x - rect.left) - canvas.width / 2) / (canvas.width / 2);
   let newY = (canvas.height / 2 - (y - rect.top)) / (canvas.height / 2);
@@ -319,19 +255,12 @@ function canvasCoordsToGL(x, y, rect) {
 }
 
 
-function main() {
+function asgn1_main() {
   // Set up website and main canvas
   setClasses();
   setHTMLActions();
   setUpWebGL();
   connectVariablesToGLSL();
-
-  // Set up secondary canvas (only has squirtle)
-  setUpWebGL2();
-  connectVariablesToGLSL2();
-  clearCanvas2(0, 0, 0, 1);
-  let bigSquirtle = new Squirtle([0, 0], 75, gl2);
-  bigSquirtle.render();
 
 
   // Register function (event handler) to be called on a mouse press
@@ -389,3 +318,6 @@ function click(ev) {
   renderAllShapes();
 
 }
+
+
+asgn1_main();
