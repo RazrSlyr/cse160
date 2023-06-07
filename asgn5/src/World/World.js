@@ -10,7 +10,7 @@ import { Loop } from './systems/Loop.js';
 import { getDrawingMaterial, getGrassMaterial, getSkyboxMaterial } from './components/materials.js';
 import { createSphere } from './components/sphere.js';
 import { createTree } from './components/tree.js';
-import { CameraHelper, MeshPhongMaterial, Vector3 } from '../../lib/three.module.js';
+import { Vector3, CanvasTexture } from '../../lib/three.module.js';
 import { createRock } from './components/rock.js';
 
 import { FogExp2 } from '../../lib/three.module.js';
@@ -77,7 +77,9 @@ class World {
     const drawing = createBox(getDrawingMaterial());
     drawing.scale.set(3, 3, 0.1);
     drawing.tick = function(delta) {
-      drawing.material = getDrawingMaterial();
+      const ctx = document.getElementById("webgl").getContext("webgl");
+      const texture = new CanvasTexture(ctx.canvas);
+      drawing.material.map = texture;
     }
 
     loop.updatables.push(controls, scene, drawing);

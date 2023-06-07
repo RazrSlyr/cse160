@@ -1,4 +1,4 @@
-import { BackSide, CanvasTexture, MeshBasicMaterial, MeshPhongMaterial, RepeatWrapping, TextureLoader } from "../../../lib/three.module.js";
+import { AddOperation, BackSide, CanvasTexture, MeshBasicMaterial, MeshPhongMaterial, MixOperation, MultiplyOperation, RepeatWrapping, TextureLoader } from "../../../lib/three.module.js";
 
 function getGrassMaterial() {
     let texturePath = "../../../assets/textures/grass/";
@@ -41,11 +41,25 @@ function getRockMaterial() {
 }
 
 function getDrawingMaterial() {
+    // get webgl drawing
     const ctx = document.getElementById("webgl").getContext("webgl");
     const texture = new CanvasTexture(ctx.canvas);
     const mat = new MeshPhongMaterial({
         map: texture
     });
+    mat.combine = AddOperation;
+
+    // mix in texture
+    const texturePath = "../../../assets/textures/drawing/"
+    let textureParts = ["aoMap", "bumpMap", "envMap", "normalMap", "roughnessMap"];
+    const textureLoader = new TextureLoader();
+    for (const part of textureParts) {
+        textureLoader.loadAsync(`${texturePath}${part}.png`).then((texture) => {
+            mat[part] = texture;
+            mat.needsUpdate = true;
+        })
+    }
+
     return mat;
 }
 
