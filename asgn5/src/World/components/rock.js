@@ -7,8 +7,8 @@ async function createRock() {
     if (mesh === undefined) {
         const loader = new OBJLoader();
         mesh = await loader.loadAsync("../../../assets/models/rock2.obj");
-        mesh.material = getGrassMaterial();
-        mesh.material.needsUpdate = true;
+        mesh = mesh.children[0];
+        mesh.material = getRockMaterial();
     }
     return mesh.clone();
 }
