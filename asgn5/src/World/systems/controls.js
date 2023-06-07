@@ -48,9 +48,15 @@ function createControls(camera, canvas) {
 // tick method where camera moves
 controls.tick = (delta) => {
   if (speed.length() > 0 && delta > 0) {
-    const movement = speed.clone();
-    movement.normalize();
-    movement.multiplyScalar(delta * maxSpeed);
+    const forward = controls.target.clone().add(controls.object.position.clone().negate());
+    forward.normalize();
+
+    const right = (new Vector3(0, 1, 0)).cross(forward);
+    right.normalize();
+
+    let movement = forward.multiplyScalar(maxSpeed * delta * -1 * speed.z);
+    movement.add(right.multiplyScalar(maxSpeed * delta * -speed.x));
+    movement.add((new Vector3(0, 1, 0)).multiplyScalar(maxSpeed * delta * speed.y));
 
     // Change target location
     controls.target.add(movement);
