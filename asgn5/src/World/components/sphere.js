@@ -1,4 +1,4 @@
-import { SphereGeometry } from "../../../lib/three.module.js";
+import { SphereGeometry, Mesh } from "../../../lib/three.module.js";
 
 
 function createSphere(material) {

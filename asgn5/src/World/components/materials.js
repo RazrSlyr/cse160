@@ -6,7 +6,7 @@ function getGrassMaterial() {
     const textureLoader = new TextureLoader();
     const mat = new MeshPhongMaterial();
     for (const part of textureParts) {
-        textureLoader.loadAsync(`${texturePath}${textureParts}.png`).then((texture) => {
+        textureLoader.loadAsync(`${texturePath}${part}.png`).then((texture) => {
             texture.wrapS = texture.wrapT = RepeatWrapping;
             texture.repeat.set(20, 20);
             mat[part] = texture;
@@ -32,7 +32,7 @@ function getRockMaterial() {
     const textureLoader = new TextureLoader();
     const mat = new MeshPhongMaterial();
     for (const part of textureParts) {
-        textureLoader.loadAsync(`${texturePath}${textureParts}.png`).then((texture) => {
+        textureLoader.loadAsync(`${texturePath}${part}.png`).then((texture) => {
             mat[part] = texture;
             mat.needsUpdate = true;
         })

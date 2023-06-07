@@ -1,14 +1,13 @@
-import { getRockMaterial } from "./materials";
+import { getGrassMaterial, getRockMaterial } from "./materials.js";
 import { OBJLoader } from "../../../lib/OBJLoader.js";
-import { MeshPhongMaterial } from "../../../lib/three.module";
 
 let mesh;
 
 async function createRock() {
-    if (model === undefined) {
+    if (mesh === undefined) {
         const loader = new OBJLoader();
         mesh = await loader.loadAsync("../../../assets/models/rock2.obj");
-        mesh.material = getRockMaterial();
+        mesh.material = getGrassMaterial();
         mesh.material.needsUpdate = true;
     }
     return mesh.clone();
