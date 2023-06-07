@@ -1,4 +1,4 @@
-import { BackSide, MeshBasicMaterial, MeshPhongMaterial, RepeatWrapping, TextureLoader } from "../../../lib/three.module.js";
+import { BackSide, CanvasTexture, MeshBasicMaterial, MeshPhongMaterial, RepeatWrapping, TextureLoader } from "../../../lib/three.module.js";
 
 function getGrassMaterial() {
     let texturePath = "../../../assets/textures/grass/";
@@ -40,4 +40,13 @@ function getRockMaterial() {
     return mat;
 }
 
-export { getGrassMaterial, getSkyboxMaterial, getRockMaterial}
+function getDrawingMaterial() {
+    const ctx = document.getElementById("webgl").getContext("webgl");
+    const texture = new CanvasTexture(ctx.canvas);
+    const mat = new MeshPhongMaterial({
+        map: texture
+    });
+    return mat;
+}
+
+export { getGrassMaterial, getSkyboxMaterial, getRockMaterial, getDrawingMaterial}

@@ -7,10 +7,10 @@ import { createControls } from './systems/controls.js';
 import { createRenderer } from './systems/renderer.js';
 import { Resizer } from './systems/Resizer.js';
 import { Loop } from './systems/Loop.js';
-import { getGrassMaterial, getSkyboxMaterial } from './components/materials.js';
+import { getDrawingMaterial, getGrassMaterial, getSkyboxMaterial } from './components/materials.js';
 import { createSphere } from './components/sphere.js';
 import { createTree } from './components/tree.js';
-import { CameraHelper, Vector3 } from '../../lib/three.module.js';
+import { CameraHelper, MeshPhongMaterial, Vector3 } from '../../lib/three.module.js';
 import { createRock } from './components/rock.js';
 
 import { FogExp2 } from '../../lib/three.module.js';
@@ -29,14 +29,14 @@ class World {
     scene = createScene();
 
     // set up fog
-    const fogColor = 0x997777;
+    const fogColor = 0x555577;
     scene.timePassed = 0;
     scene.fogDensity = 0.00;
 
     // Fog that comes and goes
     scene.tick = (delta) => {
       scene.timePassed += delta / 5;
-      scene.fogDensity = Math.sin(scene.timePassed) / 40;
+      scene.fogDensity = Math.sin(scene.timePassed) / 30;
       scene.fog = new FogExp2(fogColor, scene.fogDensity);
     }
 
@@ -73,9 +73,15 @@ class World {
     const sky = createSphere(skyMaterial);
     sky.scale.set(40, 40, 40);
 
+    // Drawing Board
+    const drawing = createBox(getDrawingMaterial());
+    drawing.scale.set(3, 3, 0.1);
+    drawing.tick = function(delta) {
+      drawing.material = getDrawingMaterial();
+    }
 
-    loop.updatables.push(controls, scene);
-    scene.add(ambientLight, mainLight, sky, ground);
+    loop.updatables.push(controls, scene, drawing);
+    scene.add(ambientLight, mainLight, sky, ground, drawing);
 
     const resizer = new Resizer(container, camera, renderer);
   }
