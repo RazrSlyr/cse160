@@ -21,9 +21,9 @@ function createControls(camera, canvas) {
       speed.z = -1;
     } else if (key == "s") {
       speed.z = 1;
-    } else if (key == " ") {
+    } else if (key == "q") {
       speed.y = 1;
-    } else if (key == "Shift") {
+    } else if (key == "e") {
       speed.y = -1;
     }
   });
@@ -38,9 +38,9 @@ function createControls(camera, canvas) {
       speed.z = 0;
     } else if (key == "s" && speed.z == 1) {
       speed.z = 0;
-    } else if (key == " " && speed.y == 1) {
+    } else if (key == "q" && speed.y == 1) {
       speed.y = 0;
-    } else if (key == "Shift" && speed.y == -1) {
+    } else if (key == "e" && speed.y == -1) {
       speed.y = 0;
     }
   });

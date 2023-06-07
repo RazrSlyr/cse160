@@ -14,6 +14,7 @@ import { Vector3, CanvasTexture } from '../../lib/three.module.js';
 import { createRock } from './components/rock.js';
 
 import { FogExp2 } from '../../lib/three.module.js';
+import { Lamp } from './components/Lamp.js';
 
 let camera;
 let controls;
@@ -65,13 +66,19 @@ class World {
     const grassMaterial = getGrassMaterial();
     const ground = createBox(grassMaterial);
     ground.position.y = -3;
-    ground.scale.set(40, 1, 40);
+    ground.scale.set(45, 1, 45);
     ground.receiveShadow = true;
 
     // Skybox
     const skyMaterial = getSkyboxMaterial();
     const sky = createSphere(skyMaterial);
-    sky.scale.set(40, 40, 40);
+    sky.scale.set(45, 45, 45);
+
+    // Lamp
+    const lamp = new Lamp();
+    lamp.position.set(-1.5, -1, 1);
+    lamp.scale.set(0.5, 0.5, 0.5);
+
 
     // Drawing Board
     const drawing = createBox(getDrawingMaterial());
@@ -83,7 +90,7 @@ class World {
     }
 
     loop.updatables.push(controls, scene, drawing);
-    scene.add(ambientLight, mainLight, sky, ground, drawing);
+    scene.add(ambientLight, mainLight, sky, ground, drawing, lamp);
 
     const resizer = new Resizer(container, camera, renderer);
   }
