@@ -1,4 +1,4 @@
-import { MeshPhongMaterial, RepeatWrapping, TextureLoader } from "../../../lib/three.module";
+import { MeshPhongMaterial, RepeatWrapping, TextureLoader } from "../../../lib/three.module.js";
 
 function getGrassMaterial() {
     let texturePath = "../../../assets/textures/grass/";
